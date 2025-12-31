@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <el-icon><EditPen /></el-icon>
-          <span>发布科普文章</span>
+          <span>{{ isEdit ? '编辑科普文章' : '发布科普文章' }}</span>
         </div>
       </template>
 
@@ -79,7 +79,7 @@
           <div class="button-group">
             <el-button type="primary" size="large" :loading="submitting" @click="handleSubmit">
               <el-icon><Upload /></el-icon>
-              <span>发布文章</span>
+              <span>{{ isEdit ? '更新文章' : '发布文章' }}</span>
             </el-button>
             <el-button size="large" @click="handleReset">
               <el-icon><RefreshLeft /></el-icon>
@@ -118,21 +118,24 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   EditPen, Upload, RefreshLeft, View, Picture, InfoFilled,
   Document, House, Sunny, Van
 } from '@element-plus/icons-vue'
-import { createArticle } from '../api/article'
+import { createArticle, getArticleDetail, updateArticle } from '../api/article'
 import { createEditor, createToolbar } from '@wangeditor/editor'
 import '@wangeditor/editor/dist/css/style.css'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref(null)
 const editorRef = ref(null)
 const submitting = ref(false)
 const previewVisible = ref(false)
+const isEdit = ref(false)
+const articleId = ref(null)
 
 let editor = null
 
@@ -216,35 +219,42 @@ const handleSubmit = async () => {
     }
 
     try {
+      const actionText = isEdit.value ? '更新' : '发布'
       await ElMessageBox.confirm(
-        '确认发布这篇文章吗？发布后其他用户将可以看到。',
-        '确认发布',
+        `确认${actionText}这篇文章吗？`,
+        `确认${actionText}`,
         {
-          confirmButtonText: '确定发布',
+          confirmButtonText: `确定${actionText}`,
           cancelButtonText: '取消',
           type: 'info'
         }
       )
 
       submitting.value = true
-      await createArticle({
+      const articleData = {
         title: form.value.title,
         category: form.value.category,
         coverImg: form.value.coverImg || null,
         content: form.value.content,
         isTop: 0
-      })
+      }
 
-      ElMessage.success('发布成功！')
+      if (isEdit.value) {
+        await updateArticle(articleId.value, articleData)
+        ElMessage.success('更新成功！')
+      } else {
+        await createArticle(articleData)
+        ElMessage.success('发布成功！')
+      }
       
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
-        router.push('/')
+        router.push(isEdit.value ? '/profile' : '/')
       }, 1500)
     } catch (error) {
       if (error !== 'cancel') {
-        console.error('发布失败:', error)
-        ElMessage.error('发布失败，请重试')
+        console.error('操作失败:', error)
+        ElMessage.error('操作失败，请重试')
       }
     } finally {
       submitting.value = false
@@ -288,10 +298,38 @@ const handleImageError = () => {
   ElMessage.warning('封面图片加载失败，请检查URL是否正确')
 }
 
+const fetchArticleDetail = async (id) => {
+  try {
+    const res = await getArticleDetail(id)
+    const article = res.data
+    form.value.title = article.title
+    form.value.category = article.category
+    form.value.coverImg = article.coverImg || ''
+    form.value.content = article.content
+    if (editor) {
+      editor.setHtml(article.content)
+    }
+  } catch (error) {
+    console.error('获取文章详情失败:', error)
+    ElMessage.error('获取文章详情失败')
+  }
+}
+
 onMounted(() => {
+  // 检查是否是编辑模式
+  const id = route.query.id
+  if (id) {
+    isEdit.value = true
+    articleId.value = id
+  }
+
   // 延迟初始化编辑器，确保DOM已渲染
   setTimeout(() => {
     initEditor()
+    // 如果是编辑模式，初始化编辑器后获取详情
+    if (isEdit.value) {
+      fetchArticleDetail(articleId.value)
+    }
   }, 100)
 })
 

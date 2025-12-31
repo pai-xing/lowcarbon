@@ -10,13 +10,15 @@
 - **Pinia** - Vue 状态管理
 - **Element Plus** - Vue 3 组件库
 - **Axios** - HTTP 客户端
+- **wangEditor** - 轻量级 Web 富文本编辑器
 
 ## 功能特性
 
 ### 用户功能
 - ✅ 用户注册/登录
-- ✅ 个人中心（查看积分、减排量、勋章）
-- ✅ 编辑个人资料（昵称、头像、个性签名）
+- ✅ 个人中心（查看积分、减排量、勋章、管理我的文章）
+- ✅ 编辑个人资料（修改昵称、头像上传、个性签名）
+- ✅ 发布/编辑科普文章（支持富文本编辑、预览）
 
 ### 文章功能
 - ✅ 文章列表浏览（支持关键词搜索、分类筛选）
@@ -59,7 +61,8 @@ frontend/
 ├── src/
 │   ├── api/              # API 接口
 │   │   ├── user.js       # 用户相关API
-│   │   └── article.js    # 文章相关API
+│   │   ├── article.js    # 文章相关API
+│   │   └── file.js       # 文件上传API
 │   ├── assets/           # 静态资源
 │   ├── layouts/          # 布局组件
 │   │   └── MainLayout.vue
@@ -75,6 +78,8 @@ frontend/
 │   │   ├── Login.vue             # 登录页
 │   │   ├── Register.vue          # 注册页
 │   │   ├── Profile.vue           # 个人中心
+│   │   ├── EditProfile.vue       # 编辑个人资料
+│   │   ├── PublishArticle.vue    # 发布/编辑科普文章
 │   │   └── ArticleManage.vue     # 文章管理
 │   ├── App.vue           # 根组件
 │   ├── main.js           # 入口文件
@@ -108,7 +113,9 @@ server: {
 - `/login` - 登录页
 - `/register` - 注册页
 - `/article/:id` - 文章详情页
+- `/publish` - 发布科普文章（需登录）
 - `/profile` - 个人中心（需登录）
+- `/profile/edit` - 编辑个人资料（需登录）
 - `/admin/articles` - 文章管理（需管理员权限）
 
 ## 认证说明

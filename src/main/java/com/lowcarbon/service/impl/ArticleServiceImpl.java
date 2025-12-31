@@ -45,6 +45,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             wrapper.eq(Article::getCategory, queryDTO.getCategory());
         }
 
+        // 作者筛选
+        if (queryDTO.getAuthorId() != null) {
+            wrapper.eq(Article::getAuthorId, queryDTO.getAuthorId());
+        }
+
         // 排序：置顶优先，然后按创建时间倒序
         wrapper.orderByDesc(Article::getIsTop)
                .orderByDesc(Article::getCreateTime);

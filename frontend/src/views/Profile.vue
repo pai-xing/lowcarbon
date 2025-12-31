@@ -3,8 +3,14 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <el-icon><User /></el-icon>
-          <span>个人中心</span>
+          <div class="header-title">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
+          </div>
+          <el-button type="primary" @click="router.push('/profile/edit')">
+            <el-icon><Edit /></el-icon>
+            编辑资料
+          </el-button>
         </div>
       </template>
       
@@ -16,6 +22,7 @@
           <div class="user-basic-info">
             <h2>{{ userInfo.nickname || userInfo.username }}</h2>
             <p class="username">@{{ userInfo.username }}</p>
+            <p class="bio" v-if="userInfo.bio">{{ userInfo.bio }}</p>
           </div>
         </div>
 
@@ -71,32 +78,38 @@
 
         <el-divider />
 
-        <div class="edit-section">
-          <h3>编辑资料</h3>
-          <el-form
-            ref="formRef"
-            :model="form"
-            label-width="100px"
-            style="max-width: 600px"
-          >
-            <el-form-item label="昵称">
-              <el-input v-model="form.nickname" placeholder="请输入昵称" />
-            </el-form-item>
-            <el-form-item label="头像URL">
-              <el-input v-model="form.avatar" placeholder="请输入头像URL" />
-            </el-form-item>
-            <el-form-item label="个性签名">
-              <el-input
-                v-model="form.bio"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入个性签名"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
-            </el-form-item>
-          </el-form>
+        <div class="articles-section">
+          <h3>我的文章</h3>
+          <el-table :data="myArticles" v-loading="articleLoading" style="width: 100%">
+            <el-table-column prop="title" label="标题" />
+            <el-table-column prop="category" label="分类" width="100" />
+            <el-table-column prop="views" label="浏览" width="80" />
+            <el-table-column prop="createTime" label="发布时间" width="120">
+              <template #default="{ row }">
+                {{ formatDate(row.createTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150" fixed="right">
+              <template #default="{ row }">
+                <el-button link type="primary" @click="handleEditArticle(row)">
+                  编辑
+                </el-button>
+                <el-button link type="danger" @click="handleDeleteArticle(row)">
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          
+          <el-pagination
+            v-if="totalArticles > 0"
+            v-model:current-page="articleQuery.current"
+            :page-size="articleQuery.size"
+            :total="totalArticles"
+            layout="prev, pager, next"
+            @current-change="handleCurrentChange"
+            style="margin-top: 15px; justify-content: flex-end"
+          />
         </div>
       </div>
     </el-card>
@@ -104,19 +117,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { updateUserInfo } from '../api/user'
-import { ElMessage } from 'element-plus'
-import { User, Star, Sunny, Trophy } from '@element-plus/icons-vue'
+import { getArticleList, deleteArticle } from '../api/article'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Star, Sunny, Trophy, Edit, Delete } from '@element-plus/icons-vue'
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(false)
-const saving = ref(false)
-const formRef = ref(null)
+const articleLoading = ref(false)
 
 const userInfo = ref({
+  id: null,
   username: '',
   nickname: '',
   avatar: '',
@@ -126,10 +141,12 @@ const userInfo = ref({
   achievements: []
 })
 
-const form = reactive({
-  nickname: '',
-  avatar: '',
-  bio: ''
+const myArticles = ref([])
+const totalArticles = ref(0)
+const articleQuery = ref({
+  current: 1,
+  size: 5,
+  authorId: null
 })
 
 const fetchUserInfo = async () => {
@@ -137,9 +154,8 @@ const fetchUserInfo = async () => {
   try {
     const info = await userStore.fetchUserInfo()
     userInfo.value = info
-    form.nickname = info.nickname || ''
-    form.avatar = info.avatar || ''
-    form.bio = info.bio || ''
+    articleQuery.value.authorId = info.id
+    fetchMyArticles()
   } catch (error) {
     console.error('获取用户信息失败:', error)
   } finally {
@@ -147,17 +163,49 @@ const fetchUserInfo = async () => {
   }
 }
 
-const handleSave = async () => {
-  saving.value = true
+const fetchMyArticles = async () => {
+  if (!articleQuery.value.authorId) return
+  articleLoading.value = true
   try {
-    await updateUserInfo(form)
-    ElMessage.success('保存成功')
-    await fetchUserInfo()
+    const res = await getArticleList(articleQuery.value)
+    myArticles.value = res.data.records || []
+    totalArticles.value = res.data.total || 0
   } catch (error) {
-    console.error('保存失败:', error)
+    console.error('获取文章列表失败:', error)
   } finally {
-    saving.value = false
+    articleLoading.value = false
   }
+}
+
+const handleEditArticle = (article) => {
+  router.push(`/publish?id=${article.id}`)
+}
+
+const handleDeleteArticle = async (article) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这篇文章吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await deleteArticle(article.id)
+    ElMessage.success('删除成功')
+    fetchMyArticles()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+    }
+  }
+}
+
+const handleCurrentChange = () => {
+  fetchMyArticles()
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('zh-CN')
 }
 
 onMounted(() => {
@@ -172,6 +220,12 @@ onMounted(() => {
 }
 
 .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -193,20 +247,29 @@ onMounted(() => {
 }
 
 .username {
-  margin: 0;
+  margin: 0 0 12px 0;
   color: #909399;
   font-size: 14px;
+}
+
+.bio {
+  color: #606266;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .stats-section {
   padding: 20px 0;
 }
 
-.achievements-section {
+.achievements-section,
+.articles-section {
   padding: 20px 0;
 }
 
-.achievements-section h3 {
+.achievements-section h3,
+.articles-section h3 {
   margin-bottom: 16px;
   color: #303133;
 }
@@ -236,11 +299,6 @@ onMounted(() => {
   margin: 0;
   color: #909399;
   font-size: 14px;
-}
-
-.edit-section h3 {
-  margin-bottom: 16px;
-  color: #303133;
 }
 </style>
 

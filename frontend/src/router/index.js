@@ -23,6 +23,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'profile/edit',
+        name: 'EditProfile',
+        component: () => import('../views/EditProfile.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'publish',
         name: 'PublishArticle',
         component: () => import('../views/PublishArticle.vue'),
