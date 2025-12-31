@@ -13,5 +13,6 @@ public class UserInfoVO {
     private String bio;
     private Integer points;
     private BigDecimal totalReduction;
+    private String role; // 用户角色
     private List<AchievementVO> achievements; // 获得的勋章列表
 }
