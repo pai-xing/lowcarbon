@@ -17,9 +17,11 @@ public class Article {
     private String content;
     private String category;
     private Integer views;
+    private Integer likesCount;
+    private Integer commentsCount;
+    private Integer favoritesCount;
     private Long authorId;
     private Integer isTop;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
-

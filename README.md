@@ -76,14 +76,30 @@ spring:
 - ✅ 文章详情查看（自动记录浏览量）
 - ✅ 用户发布/管理文章（支持富文本编辑、封面上传、编辑、删除）
 - ✅ 后台管理（管理员可编辑、删除、置顶文章）
+- ✅ **文章互动功能**（点赞、评论、收藏）
+- ✅ **我的收藏**（用户可查看自己收藏的文章列表）
 
 #### API接口
+
+**文章基础管理**
 - `GET /api/article/list` - 文章列表（游客可访问）
 - `GET /api/article/{id}` - 文章详情（游客可访问）
 - `POST /api/article` - 创建文章（登录用户）
 - `PUT /api/article/{id}` - 更新文章（作者/管理员）
 - `DELETE /api/article/{id}` - 删除文章（管理员）
 - `PUT /api/article/{id}/top` - 置顶/取消置顶（管理员）
+
+**文章互动功能**
+- `POST /api/article/{id}/like` - 点赞文章（需登录）
+- `DELETE /api/article/{id}/like` - 取消点赞（需登录）
+- `GET /api/article/{id}/like/status` - 检查点赞状态（需登录）
+- `POST /api/article/{id}/favorite` - 收藏文章（需登录）
+- `DELETE /api/article/{id}/favorite` - 取消收藏（需登录）
+- `GET /api/article/{id}/favorite/status` - 检查收藏状态（需登录）
+- `GET /api/article/favorites` - 获取收藏列表（需登录，支持分页）
+- `POST /api/article/{id}/comment` - 添加评论（需登录）
+- `GET /api/article/{id}/comments` - 获取评论列表（游客可访问）
+- `DELETE /api/article/comment/{commentId}` - 删除评论（仅自己的评论）
 
 ## 启动说明
 
@@ -172,4 +188,3 @@ spring:
 ## 许可证
 
 Apache 2.0
-

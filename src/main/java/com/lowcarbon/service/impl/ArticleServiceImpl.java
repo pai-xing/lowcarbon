@@ -9,11 +9,20 @@ import com.lowcarbon.dto.ArticleCreateDTO;
 import com.lowcarbon.dto.ArticleQueryDTO;
 import com.lowcarbon.dto.ArticleUpdateDTO;
 import com.lowcarbon.dto.ArticleVO;
+import com.lowcarbon.dto.CommentVO;
 import com.lowcarbon.entity.Article;
+import com.lowcarbon.entity.ArticleComment;
+import com.lowcarbon.entity.ArticleFavorite;
+import com.lowcarbon.entity.ArticleLike;
 import com.lowcarbon.entity.User;
+import com.lowcarbon.mapper.ArticleCommentMapper;
+import com.lowcarbon.mapper.ArticleFavoriteMapper;
+import com.lowcarbon.mapper.ArticleLikeMapper;
 import com.lowcarbon.mapper.ArticleMapper;
 import com.lowcarbon.mapper.UserMapper;
 import com.lowcarbon.service.ArticleService;
+
+import java.util.List;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +36,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ArticleLikeMapper articleLikeMapper;
+
+    @Autowired
+    private ArticleFavoriteMapper articleFavoriteMapper;
+
+    @Autowired
+    private ArticleCommentMapper articleCommentMapper;
 
     @Override
     public IPage<ArticleVO> getArticleList(ArticleQueryDTO queryDTO) {
@@ -165,5 +183,180 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         article.setIsTop(article.getIsTop() == 1 ? 0 : 1);
         articleMapper.updateById(article);
     }
-}
 
+    @Override
+    @Transactional
+    public void likeArticle(Long articleId, Long userId) {
+        // 检查是否已点赞
+        LambdaQueryWrapper<ArticleLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ArticleLike::getArticleId, articleId)
+               .eq(ArticleLike::getUserId, userId);
+        Long count = articleLikeMapper.selectCount(wrapper);
+        
+        if (count > 0) {
+            throw new RuntimeException("已经点赞过了");
+        }
+
+        // 添加点赞记录
+        ArticleLike like = new ArticleLike();
+        like.setArticleId(articleId);
+        like.setUserId(userId);
+        articleLikeMapper.insert(like);
+
+        // 更新文章点赞数
+        Article article = articleMapper.selectById(articleId);
+        if (article != null) {
+            article.setLikesCount(article.getLikesCount() == null ? 1 : article.getLikesCount() + 1);
+            articleMapper.updateById(article);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unlikeArticle(Long articleId, Long userId) {
+        // 删除点赞记录
+        LambdaQueryWrapper<ArticleLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ArticleLike::getArticleId, articleId)
+               .eq(ArticleLike::getUserId, userId);
+        articleLikeMapper.delete(wrapper);
+
+        // 更新文章点赞数
+        Article article = articleMapper.selectById(articleId);
+        if (article != null && article.getLikesCount() != null && article.getLikesCount() > 0) {
+            article.setLikesCount(article.getLikesCount() - 1);
+            articleMapper.updateById(article);
+        }
+    }
+
+    @Override
+    public boolean hasLiked(Long articleId, Long userId) {
+        LambdaQueryWrapper<ArticleLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ArticleLike::getArticleId, articleId)
+               .eq(ArticleLike::getUserId, userId);
+        return articleLikeMapper.selectCount(wrapper) > 0;
+    }
+
+    @Override
+    @Transactional
+    public void favoriteArticle(Long articleId, Long userId) {
+        // 检查是否已收藏
+        LambdaQueryWrapper<ArticleFavorite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ArticleFavorite::getArticleId, articleId)
+               .eq(ArticleFavorite::getUserId, userId);
+        Long count = articleFavoriteMapper.selectCount(wrapper);
+        
+        if (count > 0) {
+            throw new RuntimeException("已经收藏过了");
+        }
+
+        // 添加收藏记录
+        ArticleFavorite favorite = new ArticleFavorite();
+        favorite.setArticleId(articleId);
+        favorite.setUserId(userId);
+        articleFavoriteMapper.insert(favorite);
+
+        // 更新文章收藏数
+        Article article = articleMapper.selectById(articleId);
+        if (article != null) {
+            article.setFavoritesCount(article.getFavoritesCount() == null ? 1 : article.getFavoritesCount() + 1);
+            articleMapper.updateById(article);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unfavoriteArticle(Long articleId, Long userId) {
+        // 删除收藏记录
+        LambdaQueryWrapper<ArticleFavorite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ArticleFavorite::getArticleId, articleId)
+               .eq(ArticleFavorite::getUserId, userId);
+        articleFavoriteMapper.delete(wrapper);
+
+        // 更新文章收藏数
+        Article article = articleMapper.selectById(articleId);
+        if (article != null && article.getFavoritesCount() != null && article.getFavoritesCount() > 0) {
+            article.setFavoritesCount(article.getFavoritesCount() - 1);
+            articleMapper.updateById(article);
+        }
+    }
+
+    @Override
+    public boolean hasFavorited(Long articleId, Long userId) {
+        LambdaQueryWrapper<ArticleFavorite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ArticleFavorite::getArticleId, articleId)
+               .eq(ArticleFavorite::getUserId, userId);
+        return articleFavoriteMapper.selectCount(wrapper) > 0;
+    }
+
+    @Override
+    public IPage<ArticleVO> getFavoriteArticles(Long userId, Integer pageNum, Integer pageSize) {
+        // 创建分页对象
+        Page<ArticleVO> page = new Page<>(pageNum, pageSize);
+        
+        // 获取用户收藏的文章列表（分页）
+        List<ArticleVO> favoriteArticles = articleFavoriteMapper.selectFavoriteArticlesByUserId(userId);
+        
+        // 手动分页处理
+        int start = (pageNum - 1) * pageSize;
+        int end = Math.min(start + pageSize, favoriteArticles.size());
+        
+        List<ArticleVO> pageRecords = favoriteArticles.subList(
+            Math.min(start, favoriteArticles.size()), 
+            Math.min(end, favoriteArticles.size())
+        );
+        
+        page.setRecords(pageRecords);
+        page.setTotal(favoriteArticles.size());
+        page.setCurrent(pageNum);
+        page.setSize(pageSize);
+        
+        return page;
+    }
+
+    @Override
+    @Transactional
+    public void addComment(Long articleId, Long userId, String content) {
+        // 添加评论记录
+        ArticleComment comment = new ArticleComment();
+        comment.setArticleId(articleId);
+        comment.setUserId(userId);
+        comment.setContent(content);
+        comment.setParentId(null); // 暂不支持回复功能，统一设置为null
+        articleCommentMapper.insert(comment);
+
+        // 更新文章评论数
+        Article article = articleMapper.selectById(articleId);
+        if (article != null) {
+            article.setCommentsCount(article.getCommentsCount() == null ? 1 : article.getCommentsCount() + 1);
+            articleMapper.updateById(article);
+        }
+    }
+
+    @Override
+    public List<CommentVO> getComments(Long articleId) {
+        return articleCommentMapper.selectCommentsByArticleId(articleId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteComment(Long commentId, Long userId) {
+        ArticleComment comment = articleCommentMapper.selectById(commentId);
+        if (comment == null) {
+            throw new RuntimeException("评论不存在");
+        }
+
+        // 只能删除自己的评论
+        if (!comment.getUserId().equals(userId)) {
+            throw new RuntimeException("无权删除此评论");
+        }
+
+        articleCommentMapper.deleteById(commentId);
+
+        // 更新文章评论数
+        Article article = articleMapper.selectById(comment.getArticleId());
+        if (article != null && article.getCommentsCount() != null && article.getCommentsCount() > 0) {
+            article.setCommentsCount(article.getCommentsCount() - 1);
+            articleMapper.updateById(article);
+        }
+    }
+}

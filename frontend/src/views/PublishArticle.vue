@@ -30,22 +30,10 @@
             placeholder="请选择文章分类"
             style="width: 100%"
           >
-            <el-option label="环保知识" value="环保知识">
-              <el-icon><Document /></el-icon>
-              <span style="margin-left: 8px">环保知识</span>
-            </el-option>
-            <el-option label="低碳生活" value="低碳生活">
-              <el-icon><House /></el-icon>
-              <span style="margin-left: 8px">低碳生活</span>
-            </el-option>
-            <el-option label="节能减排" value="节能减排">
-              <el-icon><Sunny /></el-icon>
-              <span style="margin-left: 8px">节能减排</span>
-            </el-option>
-            <el-option label="绿色出行" value="绿色出行">
-              <el-icon><Van /></el-icon>
-              <span style="margin-left: 8px">绿色出行</span>
-            </el-option>
+            <el-option label="环保知识" value="环保知识" />
+            <el-option label="低碳生活" value="低碳生活" />
+            <el-option label="节能减排" value="节能减排" />
+            <el-option label="绿色出行" value="绿色出行" />
           </el-select>
         </el-form-item>
 
@@ -121,8 +109,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  EditPen, Upload, RefreshLeft, View, Picture, InfoFilled,
-  Document, House, Sunny, Van
+  EditPen, Upload, RefreshLeft, View, Picture, InfoFilled
 } from '@element-plus/icons-vue'
 import { createArticle, getArticleDetail, updateArticle } from '../api/article'
 import { createEditor, createToolbar } from '@wangeditor/editor'

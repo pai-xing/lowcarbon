@@ -7,7 +7,10 @@ import com.lowcarbon.dto.ArticleCreateDTO;
 import com.lowcarbon.dto.ArticleQueryDTO;
 import com.lowcarbon.dto.ArticleUpdateDTO;
 import com.lowcarbon.dto.ArticleVO;
+import com.lowcarbon.dto.CommentVO;
 import com.lowcarbon.entity.Article;
+
+import java.util.List;
 
 public interface ArticleService extends IService<Article> {
     /**
@@ -39,5 +42,54 @@ public interface ArticleService extends IService<Article> {
      * 置顶/取消置顶文章（管理员）
      */
     void toggleTop(Long id);
-}
 
+    /**
+     * 点赞文章
+     */
+    void likeArticle(Long articleId, Long userId);
+
+    /**
+     * 取消点赞文章
+     */
+    void unlikeArticle(Long articleId, Long userId);
+
+    /**
+     * 检查用户是否已点赞文章
+     */
+    boolean hasLiked(Long articleId, Long userId);
+
+    /**
+     * 收藏文章
+     */
+    void favoriteArticle(Long articleId, Long userId);
+
+    /**
+     * 取消收藏文章
+     */
+    void unfavoriteArticle(Long articleId, Long userId);
+
+    /**
+     * 检查用户是否已收藏文章
+     */
+    boolean hasFavorited(Long articleId, Long userId);
+
+    /**
+     * 获取用户收藏的文章列表（分页）
+     */
+    IPage<ArticleVO> getFavoriteArticles(Long userId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 添加评论
+     */
+    void addComment(Long articleId, Long userId, String content);
+
+    /**
+     * 获取文章的评论列表
+     */
+    List<CommentVO> getComments(Long articleId);
+
+    /**
+     * 删除评论
+     */
+    void deleteComment(Long commentId, Long userId);
+}

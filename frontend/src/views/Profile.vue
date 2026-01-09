@@ -78,38 +78,73 @@
 
         <el-divider />
 
-        <div class="articles-section">
-          <h3>我的文章</h3>
-          <el-table :data="myArticles" v-loading="articleLoading" style="width: 100%">
-            <el-table-column prop="title" label="标题" />
-            <el-table-column prop="category" label="分类" width="100" />
-            <el-table-column prop="views" label="浏览" width="80" />
-            <el-table-column prop="createTime" label="发布时间" width="120">
-              <template #default="{ row }">
-                {{ formatDate(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
-              <template #default="{ row }">
-                <el-button link type="primary" @click="handleEditArticle(row)">
-                  编辑
-                </el-button>
-                <el-button link type="danger" @click="handleDeleteArticle(row)">
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          
-          <el-pagination
-            v-if="totalArticles > 0"
-            v-model:current-page="articleQuery.current"
-            :page-size="articleQuery.size"
-            :total="totalArticles"
-            layout="prev, pager, next"
-            @current-change="handleCurrentChange"
-            style="margin-top: 15px; justify-content: flex-end"
-          />
+        <div class="tabs-section">
+          <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+            <el-tab-pane label="我的文章" name="articles">
+              <el-table :data="myArticles" v-loading="articleLoading" style="width: 100%">
+                <el-table-column prop="title" label="标题" />
+                <el-table-column prop="category" label="分类" width="100" />
+                <el-table-column prop="views" label="浏览" width="80" />
+                <el-table-column prop="createTime" label="发布时间" width="120">
+                  <template #default="{ row }">
+                    {{ formatDate(row.createTime) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="150" fixed="right">
+                  <template #default="{ row }">
+                    <el-button link type="primary" @click="handleEditArticle(row)">
+                      编辑
+                    </el-button>
+                    <el-button link type="danger" @click="handleDeleteArticle(row)">
+                      删除
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              
+              <el-pagination
+                v-if="totalArticles > 0"
+                v-model:current-page="articleQuery.current"
+                :page-size="articleQuery.size"
+                :total="totalArticles"
+                layout="prev, pager, next"
+                @current-change="handleArticlePageChange"
+                style="margin-top: 15px; justify-content: flex-end"
+              />
+            </el-tab-pane>
+
+            <el-tab-pane label="我的收藏" name="favorites">
+              <el-table :data="favoriteArticles" v-loading="favoriteLoading" style="width: 100%">
+                <el-table-column prop="title" label="标题">
+                  <template #default="{ row }">
+                    <el-link type="primary" @click="router.push(`/article/${row.id}`)">
+                      {{ row.title }}
+                    </el-link>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="authorName" label="作者" width="120" />
+                <el-table-column prop="category" label="分类" width="100" />
+                <el-table-column prop="views" label="浏览" width="80" />
+                <el-table-column prop="createTime" label="发布时间" width="120">
+                  <template #default="{ row }">
+                    {{ formatDate(row.createTime) }}
+                  </template>
+                </el-table-column>
+              </el-table>
+              
+              <el-pagination
+                v-if="totalFavorites > 0"
+                v-model:current-page="favoriteQuery.pageNum"
+                :page-size="favoriteQuery.pageSize"
+                :total="totalFavorites"
+                layout="prev, pager, next"
+                @current-change="handleFavoritePageChange"
+                style="margin-top: 15px; justify-content: flex-end"
+              />
+              
+              <el-empty v-if="favoriteArticles.length === 0 && !favoriteLoading" description="暂无收藏" />
+            </el-tab-pane>
+          </el-tabs>
         </div>
       </div>
     </el-card>
@@ -120,7 +155,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { getArticleList, deleteArticle } from '../api/article'
+import { getArticleList, deleteArticle, getFavoriteArticles } from '../api/article'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Star, Sunny, Trophy, Edit, Delete } from '@element-plus/icons-vue'
 
@@ -129,6 +164,8 @@ const userStore = useUserStore()
 
 const loading = ref(false)
 const articleLoading = ref(false)
+const favoriteLoading = ref(false)
+const activeTab = ref('articles')
 
 const userInfo = ref({
   id: null,
@@ -147,6 +184,13 @@ const articleQuery = ref({
   current: 1,
   size: 5,
   authorId: null
+})
+
+const favoriteArticles = ref([])
+const totalFavorites = ref(0)
+const favoriteQuery = ref({
+  pageNum: 1,
+  pageSize: 5
 })
 
 const fetchUserInfo = async () => {
@@ -199,8 +243,32 @@ const handleDeleteArticle = async (article) => {
   }
 }
 
-const handleCurrentChange = () => {
+const fetchFavoriteArticles = async () => {
+  favoriteLoading.value = true
+  try {
+    const res = await getFavoriteArticles(favoriteQuery.value)
+    favoriteArticles.value = res.data.records || []
+    totalFavorites.value = res.data.total || 0
+  } catch (error) {
+    console.error('获取收藏列表失败:', error)
+    ElMessage.error('获取收藏列表失败')
+  } finally {
+    favoriteLoading.value = false
+  }
+}
+
+const handleTabChange = (tabName) => {
+  if (tabName === 'favorites' && favoriteArticles.value.length === 0) {
+    fetchFavoriteArticles()
+  }
+}
+
+const handleArticlePageChange = () => {
   fetchMyArticles()
+}
+
+const handleFavoritePageChange = () => {
+  fetchFavoriteArticles()
 }
 
 const formatDate = (dateStr) => {
@@ -263,15 +331,17 @@ onMounted(() => {
   padding: 20px 0;
 }
 
-.achievements-section,
-.articles-section {
+.achievements-section {
   padding: 20px 0;
 }
 
-.achievements-section h3,
-.articles-section h3 {
+.achievements-section h3 {
   margin-bottom: 16px;
   color: #303133;
+}
+
+.tabs-section {
+  padding: 20px 0;
 }
 
 .achievements-list {
@@ -301,4 +371,3 @@ onMounted(() => {
   font-size: 14px;
 }
 </style>
-
