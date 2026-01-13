@@ -2,31 +2,11 @@
   <el-container class="main-layout">
     <el-header class="header">
       <div class="header-content">
-        <div class="logo" @click="$router.push('/')">
-          <el-icon><Sunny /></el-icon>
-          <span>低碳生活系统</span>
-        </div>
-        <div class="nav-menu">
-          <el-menu
-            mode="horizontal"
-            :default-active="activeMenu"
-            router
-            class="nav-menu-item"
-          >
-            <el-menu-item index="/">首页</el-menu-item>
-            <el-menu-item v-if="userStore.isLoggedIn" index="/publish">
-              <el-icon><EditPen /></el-icon>
-              <span>发布科普</span>
-            </el-menu-item>
-            <el-menu-item v-if="userStore.isLoggedIn" index="/profile">个人中心</el-menu-item>
-            <el-menu-item v-if="userStore.isAdmin" index="/admin/articles">文章管理</el-menu-item>
-          </el-menu>
-        </div>
         <div class="user-actions">
           <template v-if="userStore.isLoggedIn">
             <el-dropdown @command="handleCommand">
               <span class="user-info">
-                <el-avatar :src="userStore.userInfo?.avatar" :size="32">
+                <el-avatar :src="userStore.userInfo?.avatar" :key="userStore.userInfo?.avatar" :size="32">
                   {{ userStore.userInfo?.nickname?.[0] || userStore.userInfo?.username?.[0] }}
                 </el-avatar>
                 <span class="username">{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</span>
@@ -45,6 +25,45 @@
             <el-button @click="$router.push('/register')">注册</el-button>
           </template>
         </div>
+        <div class="logo" @click="$router.push('/')">
+          <el-icon><Sunny /></el-icon>
+          <span>低碳生活系统</span>
+        </div>
+        <div class="nav-menu">
+          <el-menu
+            mode="horizontal"
+            :default-active="activeMenu"
+            router
+            class="nav-menu-item"
+          >
+            <el-menu-item index="/">首页</el-menu-item>
+            <el-menu-item index="/category/huanbao">环保知识</el-menu-item>
+            <el-menu-item index="/category/ditan">低碳生活</el-menu-item>
+            <el-menu-item index="/category/jieneng">节能减排</el-menu-item>
+            <el-menu-item index="/category/lvxing">绿色出行</el-menu-item>
+            <el-menu-item v-if="userStore.isLoggedIn" index="/footprint">碳足迹</el-menu-item>
+            <el-menu-item v-if="userStore.isLoggedIn" index="/checkin">打卡</el-menu-item>
+            <el-menu-item v-if="userStore.isLoggedIn" index="/publish">
+              <el-icon><EditPen /></el-icon>
+              <span>发布科普</span>
+            </el-menu-item>
+            <el-menu-item v-if="userStore.isAdmin" index="/admin/articles">文章管理</el-menu-item>
+          </el-menu>
+        </div>
+        <div class="header-search">
+          <el-input
+            v-model="headerKeyword"
+            placeholder="搜索文章标题或内容"
+            clearable
+            size="small"
+            @keyup.enter="handleHeaderSearch"
+            style="width: 260px"
+          >
+            <template #append>
+              <el-button :icon="Search" @click="handleHeaderSearch" />
+            </template>
+          </el-input>
+        </div>
       </div>
     </el-header>
     <el-main class="main-content">
@@ -54,19 +73,29 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
-import { Sunny, ArrowDown, EditPen } from '@element-plus/icons-vue'
+import { Sunny, ArrowDown, EditPen, Search } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+// 头部搜索框状态与事件
+const headerKeyword = ref('')
+const handleHeaderSearch = () => {
+  // 跳转到首页并带上关键词参数，由 Home 页面根据路由查询参数执行搜索
+  router.push({ name: 'Home', query: { keyword: headerKeyword.value } })
+}
+
 const activeMenu = computed(() => {
   if (route.path.startsWith('/admin')) return '/admin/articles'
   if (route.path.startsWith('/profile')) return '/profile'
+  if (route.path.startsWith('/category')) return route.path
+  if (route.path.startsWith('/footprint')) return '/footprint'
+  if (route.path.startsWith('/checkin')) return '/checkin'
   return '/'
 })
 
@@ -160,5 +189,10 @@ onMounted(() => {
   padding: 20px;
   width: 100%;
 }
-</style>
+.header-search {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
 
+</style>

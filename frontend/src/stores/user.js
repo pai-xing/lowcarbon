@@ -35,9 +35,21 @@ export const useUserStore = defineStore('user', {
     async fetchUserInfo() {
       try {
         const res = await getUserInfo()
-        this.userInfo = res.data
-        localStorage.setItem('userInfo', JSON.stringify(res.data))
-        return res.data
+        // 统一头像URL并追加缓存破坏参数，避免各处组件因浏览器缓存显示旧头像
+        const data = { ...res.data }
+        if (data && typeof data.avatar === 'string' && data.avatar) {
+          let avatarUrl = data.avatar
+          if (!avatarUrl.startsWith('http')) {
+            avatarUrl = window.location.origin + avatarUrl
+          }
+          const sep = avatarUrl.includes('?') ? '&' : '?'
+          // 使用时间戳作为版本参数，确保每次拉取后的头像都能刷新
+          avatarUrl = `${avatarUrl}${sep}v=${Date.now()}`
+          data.avatar = avatarUrl
+        }
+        this.userInfo = data
+        localStorage.setItem('userInfo', JSON.stringify(data))
+        return data
       } catch (error) {
         this.logout()
         throw error
@@ -53,4 +65,3 @@ export const useUserStore = defineStore('user', {
     }
   }
 })
-

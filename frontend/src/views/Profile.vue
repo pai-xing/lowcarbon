@@ -16,8 +16,8 @@
       
       <div class="profile-content" v-loading="loading">
         <div class="profile-header">
-          <el-avatar :src="userInfo.avatar" :size="100">
-            {{ userInfo.nickname?.[0] || userInfo.username?.[0] }}
+          <el-avatar :src="userStore.userInfo?.avatar || userInfo.avatar" :key="userStore.userInfo?.avatar || userInfo.avatar" :size="100">
+            {{ (userStore.userInfo?.nickname || userInfo.nickname)?.[0] || (userStore.userInfo?.username || userInfo.username)?.[0] }}
           </el-avatar>
           <div class="user-basic-info">
             <h2>{{ userInfo.nickname || userInfo.username }}</h2>
@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { getArticleList, deleteArticle, getFavoriteArticles } from '../api/article'
@@ -279,6 +279,16 @@ const formatDate = (dateStr) => {
 onMounted(() => {
   fetchUserInfo()
 })
+
+// 监听全局 store 的头像变化，及时同步到本页的 userInfo
+watch(
+  () => userStore.userInfo?.avatar,
+  (newVal) => {
+    if (newVal) {
+      userInfo.value.avatar = newVal
+    }
+  }
+)
 </script>
 
 <style scoped>

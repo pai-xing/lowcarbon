@@ -20,6 +20,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/user/register",
                         "/user/login",
                         "/article/list",
+                        "/footprint/behavior-types",
                         "/doc.html",
                         "/webjars/**",
                         "/swagger-resources/**",
@@ -27,4 +28,3 @@ public class InterceptorConfig implements WebMvcConfigurer {
                 );
     }
 }
-

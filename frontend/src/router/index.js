@@ -39,6 +39,23 @@ const routes = [
         name: 'ArticleManage',
         component: () => import('../views/ArticleManage.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'category/:key',
+        name: 'Category',
+        component: () => import('../views/Category.vue')
+      },
+      {
+        path: 'footprint',
+        name: 'Footprint',
+        component: () => import('../views/Footprint.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'checkin',
+        name: 'Checkin',
+        component: () => import('../views/Checkin.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -78,4 +95,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-

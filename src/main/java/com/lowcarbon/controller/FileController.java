@@ -23,6 +23,9 @@ public class FileController {
     @Value("${server.port}")
     private String port;
 
+    @Value("${server.servlet.context-path:}")
+    private String contextPath;
+
     private static final String UPLOAD_PATH = "uploads/";
 
     @Operation(summary = "上传文件", description = "上传图片文件，返回访问URL")
@@ -48,8 +51,9 @@ public class FileController {
         try {
             // 保存文件
             file.transferTo(dest);
-            // 返回URL (假设本地运行)
-            String url = "http://localhost:" + port + "/uploads/" + fileName;
+            // 返回相对URL，适配前端 Vite 代理（同源加载 /api/uploads/**）
+            String cp = (contextPath == null) ? "" : contextPath;
+            String url = cp + "/uploads/" + fileName;
             return Result.success(url);
         } catch (IOException e) {
             return Result.error("文件上传失败: " + e.getMessage());

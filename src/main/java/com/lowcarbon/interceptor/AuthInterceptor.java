@@ -25,10 +25,15 @@ public class AuthInterceptor implements HandlerInterceptor {
         String uri = request.getRequestURI();
         String method = request.getMethod();
         
-        // 允许游客访问的接口：注册、登录、文章列表、文章详情（GET请求）
+        // 调试日志：输出实际接收到的URI
+        System.out.println("AuthInterceptor - 接收到的URI: " + uri + ", 方法: " + method);
+        
+        // 允许游客访问的接口：注册、登录、文章列表、文章详情（GET请求）、行为类型接口
         if (uri.contains("/user/register") || uri.contains("/user/login") 
             || uri.equals("/api/article/list") 
+            || uri.contains("/footprint/behavior-types")
             || (uri.matches("/api/article/\\d+$") && "GET".equals(method))) {
+            System.out.println("AuthInterceptor - 命中白名单，允许访问");
             return true;
         }
 
@@ -56,4 +61,3 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
     }
 }
-

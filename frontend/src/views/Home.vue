@@ -73,19 +73,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getArticleList } from '../api/article'
 import { User, View, Clock } from '@element-plus/icons-vue'
 
 const router = useRouter()
+
+const route = useRoute()
 
 const loading = ref(false)
 const articleList = ref([])
 const total = ref(0)
 
 const queryForm = reactive({
-  keyword: '',
+  keyword: route.query.keyword ? String(route.query.keyword) : '',
   category: '',
   current: 1,
   size: 10
@@ -143,6 +145,18 @@ const formatDate = (dateStr) => {
     day: '2-digit'
   })
 }
+
+watch(
+  () => route.query.keyword,
+  (newKeyword) => {
+    const val = newKeyword ? String(newKeyword) : ''
+    if (val !== queryForm.keyword) {
+      queryForm.keyword = val
+      queryForm.current = 1
+      fetchArticleList()
+    }
+  }
+)
 
 onMounted(() => {
   fetchArticleList()
@@ -235,4 +249,3 @@ onMounted(() => {
   gap: 4px;
 }
 </style>
-
