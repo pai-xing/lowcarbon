@@ -28,9 +28,6 @@ public class ArticleController {
     @Autowired
     private ArticleService articleService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
     @Operation(summary = "文章列表", description = "游客无需登录即可浏览，支持分类和关键词搜索")
     @GetMapping("/list")
     public Result<IPage<ArticleVO>> getArticleList(ArticleQueryDTO queryDTO) {
@@ -58,7 +55,7 @@ public class ArticleController {
     public Result<Void> createArticle(@Valid @RequestBody ArticleCreateDTO createDTO, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long authorId = jwtUtil.getUserIdFromToken(token);
+            Long authorId = JwtUtil.getUserIdFromToken(token);
             articleService.createArticle(createDTO, authorId);
             return Result.success("发布成功");
         } catch (Exception e) {
@@ -104,7 +101,7 @@ public class ArticleController {
     public Result<Void> likeArticle(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             articleService.likeArticle(id, userId);
             return Result.success("点赞成功");
         } catch (Exception e) {
@@ -117,7 +114,7 @@ public class ArticleController {
     public Result<Void> unlikeArticle(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             articleService.unlikeArticle(id, userId);
             return Result.success("已取消点赞");
         } catch (Exception e) {
@@ -130,7 +127,7 @@ public class ArticleController {
     public Result<Map<String, Boolean>> checkLikeStatus(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             boolean hasLiked = articleService.hasLiked(id, userId);
             Map<String, Boolean> result = new HashMap<>();
             result.put("hasLiked", hasLiked);
@@ -145,7 +142,7 @@ public class ArticleController {
     public Result<Void> favoriteArticle(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             articleService.favoriteArticle(id, userId);
             return Result.success("收藏成功");
         } catch (Exception e) {
@@ -158,7 +155,7 @@ public class ArticleController {
     public Result<Void> unfavoriteArticle(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             articleService.unfavoriteArticle(id, userId);
             return Result.success("已取消收藏");
         } catch (Exception e) {
@@ -171,7 +168,7 @@ public class ArticleController {
     public Result<Map<String, Boolean>> checkFavoriteStatus(@PathVariable Long id, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             boolean hasFavorited = articleService.hasFavorited(id, userId);
             Map<String, Boolean> result = new HashMap<>();
             result.put("hasFavorited", hasFavorited);
@@ -188,7 +185,7 @@ public class ArticleController {
                                                          HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             IPage<ArticleVO> page = articleService.getFavoriteArticles(userId, pageNum, pageSize);
             return Result.success(page);
         } catch (Exception e) {
@@ -203,7 +200,7 @@ public class ArticleController {
                                     HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             String content = requestBody.get("content");
             if (content == null || content.trim().isEmpty()) {
                 return Result.error("评论内容不能为空");
@@ -231,7 +228,7 @@ public class ArticleController {
     public Result<Void> deleteComment(@PathVariable Long commentId, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             articleService.deleteComment(commentId, userId);
             return Result.success("删除成功");
         } catch (Exception e) {

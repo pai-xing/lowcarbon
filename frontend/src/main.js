@@ -7,8 +7,12 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import App from './App.vue'
 import router from './router'
 import './style.css'
+import { initTheme } from './utils/theme'
 
 try {
+  // 初始化主题
+  initTheme()
+  
   const app = createApp(App)
   const pinia = createPinia()
 
@@ -27,4 +31,3 @@ try {
 } catch (error) {
   console.error('应用启动失败:', error)
 }
-

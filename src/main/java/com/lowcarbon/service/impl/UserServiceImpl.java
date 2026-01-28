@@ -2,6 +2,8 @@ package com.lowcarbon.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lowcarbon.common.Constants;
 import com.lowcarbon.dto.AchievementVO;
@@ -21,7 +23,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,9 +36,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private AchievementMapper achievementMapper;
-
-    @Autowired
-    private JwtUtil jwtUtil;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -65,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         userMapper.insert(user);
 
         // 生成JWT Token
-        return jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+        return JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
     }
 
     @Override
@@ -87,7 +88,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         // 生成JWT Token
-        return jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+        return JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
     }
 
     @Override
@@ -146,5 +147,80 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         wrapper.eq(User::getUsername, username);
         return userMapper.selectOne(wrapper);
     }
-}
 
+    @Override
+    public IPage<User> getUserList(Integer page, Integer pageSize, String username, Integer status) {
+        // 创建分页对象
+        Page<User> userPage = new Page<>(page, pageSize);
+        
+        // 构建查询条件
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        if (StrUtil.isNotBlank(username)) {
+            wrapper.like(User::getUsername, username)
+                   .or()
+                   .like(User::getNickname, username);
+        }
+        if (status != null) {
+            wrapper.eq(User::getStatus, status);
+        }
+        wrapper.orderByDesc(User::getCreateTime);
+        
+        // 分页查询
+        IPage<User> result = userMapper.selectPage(userPage, wrapper);
+        
+        // 清除密码字段
+        result.getRecords().forEach(user -> user.setPassword(null));
+        
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public void updateUserStatus(Long userId, Integer status) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 不允许禁用管理员
+        if (Constants.ROLE_ADMIN.equals(user.getRole())) {
+            throw new RuntimeException("不允许禁用管理员账户");
+        }
+        
+        user.setStatus(status);
+        userMapper.updateById(user);
+    }
+
+    @Override
+    public Map<String, Object> getStatistics() {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        // 用户总数
+        Long totalUsers = userMapper.selectCount(null);
+        statistics.put("totalUsers", totalUsers);
+        
+        // 活跃用户数（状态为0的用户）
+        LambdaQueryWrapper<User> activeWrapper = new LambdaQueryWrapper<>();
+        activeWrapper.eq(User::getStatus, Constants.STATUS_NORMAL);
+        Long activeUsers = userMapper.selectCount(activeWrapper);
+        statistics.put("activeUsers", activeUsers);
+        
+        // 总积分
+        List<User> allUsers = userMapper.selectList(null);
+        Integer totalPoints = allUsers.stream()
+                .mapToInt(user -> user.getPoints() != null ? user.getPoints() : 0)
+                .sum();
+        statistics.put("totalPoints", totalPoints);
+        
+        // 总减排量
+        java.math.BigDecimal totalReduction = allUsers.stream()
+                .map(user -> user.getTotalReduction() != null ? user.getTotalReduction() : java.math.BigDecimal.ZERO)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        statistics.put("totalReduction", totalReduction);
+        
+        // 今日新增用户（简化实现，实际应该查询今天注册的）
+        statistics.put("todayNewUsers", 0);
+        
+        return statistics;
+    }
+}

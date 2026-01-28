@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,6 @@ public class FootprintController {
     
     @Autowired
     private FootprintService footprintService;
-    
-    @Autowired
-    private JwtUtil jwtUtil;
     
     /**
      * 获取所有行为类型配置
@@ -47,7 +45,7 @@ public class FootprintController {
     public Result<FootprintVO> createFootprint(@Valid @RequestBody FootprintCreateDTO createDTO,
                                                HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         FootprintVO footprintVO = footprintService.createFootprint(createDTO, userId);
         return Result.success(footprintVO);
     }
@@ -64,7 +62,7 @@ public class FootprintController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         IPage<FootprintVO> page = footprintService.getFootprintList(userId, pageNum, pageSize, startDate, endDate);
         return Result.success(page);
     }
@@ -79,7 +77,7 @@ public class FootprintController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         
         // 如果没有指定日期，默认查询最近30天
         if (startDate == null && endDate == null) {
@@ -98,7 +96,7 @@ public class FootprintController {
     @Operation(summary = "获取按行为类型的统计")
     public Result<List<Map<String, Object>>> getStatisticsByBehaviorType(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         List<Map<String, Object>> statistics = footprintService.getStatisticsByBehaviorType(userId);
         return Result.success(statistics);
     }
@@ -113,7 +111,7 @@ public class FootprintController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         
         // 如果没有指定日期，默认查询最近30天
         if (startDate == null && endDate == null) {
@@ -126,16 +124,23 @@ public class FootprintController {
     }
     
     /**
-     * 标准打卡（单位为“次”的行为）
+     * 标准打卡（单位为"次"的行为）
      */
     @PostMapping("/checkin")
-    @Operation(summary = "标准打卡（单位为“次”的行为，一天仅一次）")
-    public Result<FootprintVO> checkin(@RequestBody Map<String, String> body, HttpServletRequest request) {
+    @Operation(summary = "标准打卡（单位为次的行为，一天仅一次）")
+    public Result<FootprintVO> checkin(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
-        String behaviorType = body.get("behaviorType");
-        String remark = body.getOrDefault("remark", null);
-        FootprintVO vo = footprintService.checkin(behaviorType, userId, remark);
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        String behaviorType = (String) body.get("behaviorType");
+        String remark = (String) body.getOrDefault("remark", null);
+        
+        // 位置信息（可选）
+        BigDecimal latitude = body.get("latitude") != null ? new BigDecimal(body.get("latitude").toString()) : null;
+        BigDecimal longitude = body.get("longitude") != null ? new BigDecimal(body.get("longitude").toString()) : null;
+        String address = (String) body.get("address");
+        String geoSource = (String) body.get("geoSource");
+        
+        FootprintVO vo = footprintService.checkin(behaviorType, userId, remark, latitude, longitude, address, geoSource);
         return Result.success(vo);
     }
     
@@ -148,7 +153,7 @@ public class FootprintController {
             @RequestParam String month,
             HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         LocalDate monthDate = LocalDate.parse(month + "-01");
         LocalDate monthStart = monthDate.withDayOfMonth(1);
         LocalDate monthEnd = monthDate.withDayOfMonth(monthDate.lengthOfMonth());
@@ -163,7 +168,7 @@ public class FootprintController {
     @Operation(summary = "获取用户打卡统计数据")
     public Result<Map<String, Object>> getCheckinStats(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         Map<String, Object> stats = footprintService.getCheckinStats(userId);
         return Result.success(stats);
     }
@@ -177,7 +182,7 @@ public class FootprintController {
                                                @Valid @RequestBody FootprintCreateDTO updateDTO,
                                                HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         FootprintVO vo = footprintService.updateFootprint(id, updateDTO, userId);
         return Result.success(vo);
     }
@@ -189,9 +194,24 @@ public class FootprintController {
     @Operation(summary = "删除碳足迹记录")
     public Result<Void> deleteFootprint(@PathVariable Long id, HttpServletRequest request) {
         String token = getTokenFromRequest(request);
-        Long userId = jwtUtil.getUserIdFromToken(token);
+        Long userId = JwtUtil.getUserIdFromToken(token);
         footprintService.deleteFootprint(id, userId);
         return Result.success();
+    }
+    
+    /**
+     * 地图足迹：获取用户在指定日期范围内的点位列表
+     */
+    @GetMapping("/map/points")
+    @Operation(summary = "获取地图足迹点位（按日期范围过滤）")
+    public Result<List<Map<String, Object>>> getMapPoints(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpServletRequest request) {
+        String token = getTokenFromRequest(request);
+        Long userId = JwtUtil.getUserIdFromToken(token);
+        List<Map<String, Object>> points = footprintService.getMapPoints(userId, startDate, endDate);
+        return Result.success(points);
     }
     
     /**

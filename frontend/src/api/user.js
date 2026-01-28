@@ -35,3 +35,28 @@ export function updateUserInfo(data) {
   })
 }
 
+// 管理员获取用户列表
+export function getUserList(params) {
+  return request({
+    url: '/user/admin/list',
+    method: 'get',
+    params
+  })
+}
+
+// 管理员更新用户状态
+export function updateUserStatus(userId, status) {
+  return request({
+    url: `/user/admin/${userId}/status`,
+    method: 'put',
+    params: { status }
+  })
+}
+
+// 管理员获取统计数据
+export function getStatistics() {
+  return request({
+    url: '/user/admin/statistics',
+    method: 'get'
+  })
+}

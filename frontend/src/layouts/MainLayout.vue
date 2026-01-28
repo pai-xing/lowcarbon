@@ -41,13 +41,17 @@
             <el-menu-item index="/category/ditan">低碳生活</el-menu-item>
             <el-menu-item index="/category/jieneng">节能减排</el-menu-item>
             <el-menu-item index="/category/lvxing">绿色出行</el-menu-item>
+            <el-menu-item index="/community">社区</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/footprint">碳足迹</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/checkin">打卡</el-menu-item>
+            <el-menu-item v-if="userStore.isLoggedIn" index="/map-footprint">地图足迹</el-menu-item>
+            <el-menu-item v-if="userStore.isLoggedIn" index="/shop">积分商城</el-menu-item>
+            <el-menu-item index="/activity">低碳活动</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/publish">
               <el-icon><EditPen /></el-icon>
               <span>发布科普</span>
             </el-menu-item>
-            <el-menu-item v-if="userStore.isAdmin" index="/admin/articles">文章管理</el-menu-item>
+            <el-menu-item v-if="userStore.isAdmin" index="/admin">管理员管理</el-menu-item>
           </el-menu>
         </div>
         <div class="header-search">
@@ -91,11 +95,16 @@ const handleHeaderSearch = () => {
 }
 
 const activeMenu = computed(() => {
-  if (route.path.startsWith('/admin')) return '/admin/articles'
+  if (route.path.startsWith('/admin')) return '/admin'
   if (route.path.startsWith('/profile')) return '/profile'
   if (route.path.startsWith('/category')) return route.path
+  if (route.path.startsWith('/community')) return '/community'
+  if (route.path.startsWith('/publish-post')) return '/community'
+  if (route.path.startsWith('/map-footprint')) return '/map-footprint'
   if (route.path.startsWith('/footprint')) return '/footprint'
   if (route.path.startsWith('/checkin')) return '/checkin'
+  if (route.path.startsWith('/shop')) return '/shop'
+  if (route.path.startsWith('/activity')) return '/activity'
   return '/'
 })
 

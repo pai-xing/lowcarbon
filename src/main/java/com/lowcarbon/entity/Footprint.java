@@ -23,5 +23,9 @@ public class Footprint {
     private Integer pointsEarned;
     private LocalDate recordDate;
     private String remark;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private String address;
+    private String geoSource;
     private LocalDateTime createTime;
 }

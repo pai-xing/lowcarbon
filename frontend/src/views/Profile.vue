@@ -20,10 +20,27 @@
             {{ (userStore.userInfo?.nickname || userInfo.nickname)?.[0] || (userStore.userInfo?.username || userInfo.username)?.[0] }}
           </el-avatar>
           <div class="user-basic-info">
-            <h2>{{ userInfo.nickname || userInfo.username }}</h2>
+            <div class="name-with-badge">
+              <h2>{{ userInfo.nickname || userInfo.username }}</h2>
+              <el-tag v-if="userInfo.vipBadge === 1" type="warning" effect="dark" size="small" style="margin-left: 8px">
+                <el-icon><Star /></el-icon> VIP
+              </el-tag>
+            </div>
             <p class="username">@{{ userInfo.username }}</p>
             <p class="bio" v-if="userInfo.bio">{{ userInfo.bio }}</p>
           </div>
+        </div>
+
+        <div class="virtual-goods-section" v-if="userInfo.hasVirtualTree === 1">
+          <el-card shadow="hover" class="virtual-tree-card">
+            <div class="virtual-tree-content">
+              <el-icon size="60" color="#67C23A"><Opportunity /></el-icon>
+              <div class="tree-info">
+                <h3>我的虚拟树 🌳</h3>
+                <p>感谢您为环保事业做出的贡献！</p>
+              </div>
+            </div>
+          </el-card>
         </div>
 
         <el-divider />
@@ -157,7 +174,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { getArticleList, deleteArticle, getFavoriteArticles } from '../api/article'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Star, Sunny, Trophy, Edit, Delete } from '@element-plus/icons-vue'
+import { User, Star, Sunny, Trophy, Edit, Delete, Opportunity } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -378,6 +395,38 @@ watch(
 .achievement-info p {
   margin: 0;
   color: #909399;
+  font-size: 14px;
+}
+
+.name-with-badge {
+  display: flex;
+  align-items: center;
+}
+
+.virtual-goods-section {
+  margin-top: 16px;
+}
+
+.virtual-tree-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
+  border: 2px solid #67C23A;
+}
+
+.virtual-tree-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.tree-info h3 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 18px;
+}
+
+.tree-info p {
+  margin: 0;
+  color: #67C23A;
   font-size: 14px;
 }
 </style>

@@ -24,5 +24,9 @@ public class User {
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    
+    // 虚拟商品字段
+    private String themeStyle;      // 主题皮肤：default/green/dark
+    private Integer hasVirtualTree; // 是否拥有虚拟树：0-无，1-有
+    private Integer vipBadge;       // 是否拥有VIP标识：0-无，1-有
 }
-

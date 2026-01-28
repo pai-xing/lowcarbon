@@ -35,6 +35,70 @@
               show-word-limit
             />
           </div>
+          
+          <!-- 位置信息折叠面板 -->
+          <div class="location-section">
+            <el-collapse v-model="locationCollapse">
+              <el-collapse-item name="location">
+                <template #title>
+                  <div class="collapse-title">
+                    <el-icon><LocationInformation /></el-icon>
+                    <span>位置信息（可选）</span>
+                  </div>
+                </template>
+                <el-form label-width="80px" size="small">
+                  <el-form-item label="获取位置">
+                    <el-button 
+                      :icon="Location" 
+                      @click="getCurrentLocation"
+                      :loading="gettingLocation"
+                      size="small"
+                    >
+                      {{ gettingLocation ? '定位中...' : '自动定位' }}
+                    </el-button>
+                    <el-text size="small" type="info" style="margin-left: 8px;">
+                      或手动输入
+                    </el-text>
+                  </el-form-item>
+                  <el-form-item label="经度">
+                    <el-input 
+                      v-model="locationData.longitude" 
+                      placeholder="例如：116.404"
+                      clearable
+                      type="number"
+                      step="0.000001"
+                    />
+                  </el-form-item>
+                  <el-form-item label="纬度">
+                    <el-input 
+                      v-model="locationData.latitude" 
+                      placeholder="例如：39.915"
+                      clearable
+                      type="number"
+                      step="0.000001"
+                    />
+                  </el-form-item>
+                  <el-form-item label="地址">
+                    <el-input 
+                      v-model="locationData.address" 
+                      placeholder="例如：北京市朝阳区"
+                      clearable
+                      maxlength="200"
+                    />
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button 
+                      size="small" 
+                      @click="clearLocation"
+                      :icon="Delete"
+                    >
+                      清空位置
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
           <div v-if="todayTypes.size > 0" class="today-types">
             <el-tag v-for="t in Array.from(todayTypes)" :key="t" type="success" effect="plain" class="type-tag">
               今日已打卡：{{ typeNameMap[t] || t }}
@@ -130,7 +194,7 @@
  */
 import { onMounted, reactive, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { InfoFilled, Refresh, ForkSpoon, Delete, TakeawayBox, ShoppingBag } from '@element-plus/icons-vue'
+import { InfoFilled, Refresh, ForkSpoon, Delete, TakeawayBox, ShoppingBag, Location, LocationInformation } from '@element-plus/icons-vue'
 import { checkin, getCalendar, getCheckinStats } from '../api/checkin'
 
 // 预设单位为“次”的行为
@@ -151,6 +215,16 @@ const presetBehaviors = [
 const remark = ref('')
 // 今日已打卡的行为类型集合（从当月日历中取今日）
 const todayTypes = reactive(new Set())
+
+// 位置信息
+const locationCollapse = ref([]) // 折叠面板展开状态
+const gettingLocation = ref(false) // 是否正在获取位置
+const locationData = reactive({
+  latitude: '',
+  longitude: '',
+  address: '',
+  geoSource: 'MANUAL' // GPS, MANUAL, IP
+})
 
 // 统计
 const stats = reactive({
@@ -252,6 +326,55 @@ async function refreshCalendar () {
   await loadCalendar()
 }
 
+// 获取当前位置
+async function getCurrentLocation () {
+  if (!navigator.geolocation) {
+    ElMessage.warning('您的浏览器不支持地理定位')
+    return
+  }
+  
+  gettingLocation.value = true
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      })
+    })
+    
+    locationData.latitude = position.coords.latitude.toFixed(6)
+    locationData.longitude = position.coords.longitude.toFixed(6)
+    locationData.geoSource = 'GPS'
+    
+    // 尝试反向地理编码获取地址（这里简单设置为坐标信息）
+    locationData.address = `纬度: ${locationData.latitude}, 经度: ${locationData.longitude}`
+    
+    ElMessage.success('定位成功')
+  } catch (error) {
+    console.error('定位失败', error)
+    let errorMsg = '定位失败'
+    if (error.code === 1) {
+      errorMsg = '用户拒绝了定位请求'
+    } else if (error.code === 2) {
+      errorMsg = '位置信息不可用'
+    } else if (error.code === 3) {
+      errorMsg = '定位超时'
+    }
+    ElMessage.error(errorMsg)
+  } finally {
+    gettingLocation.value = false
+  }
+}
+
+// 清空位置信息
+function clearLocation () {
+  locationData.latitude = ''
+  locationData.longitude = ''
+  locationData.address = ''
+  locationData.geoSource = 'MANUAL'
+}
+
 async function doCheckin (behaviorType) {
   if (todayTypes.has(behaviorType)) {
     ElMessage.warning('今日已完成该行为打卡')
@@ -259,7 +382,22 @@ async function doCheckin (behaviorType) {
   }
   checkinLoading[behaviorType] = true
   try {
-    await checkin({ behaviorType, remark: remark.value || undefined })
+    const params = {
+      behaviorType,
+      remark: remark.value || undefined
+    }
+    
+    // 如果填写了位置信息，则添加到请求参数中
+    if (locationData.latitude && locationData.longitude) {
+      params.latitude = parseFloat(locationData.latitude)
+      params.longitude = parseFloat(locationData.longitude)
+      if (locationData.address) {
+        params.address = locationData.address
+      }
+      params.geoSource = locationData.geoSource
+    }
+    
+    await checkin(params)
     ElMessage.success('打卡成功')
     // 刷新日历与统计
     await Promise.all([loadStats(), loadCalendar()])
@@ -301,6 +439,16 @@ onMounted(async () => {
 
 .remark-input {
   margin-top: 12px;
+}
+
+.location-section {
+  margin-top: 12px;
+}
+
+.collapse-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .today-types {

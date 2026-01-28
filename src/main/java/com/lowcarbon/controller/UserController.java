@@ -1,10 +1,13 @@
 package com.lowcarbon.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.lowcarbon.common.Constants;
 import com.lowcarbon.common.Result;
 import com.lowcarbon.dto.UserInfoVO;
 import com.lowcarbon.dto.UserLoginDTO;
 import com.lowcarbon.dto.UserRegisterDTO;
 import com.lowcarbon.dto.UserUpdateDTO;
+import com.lowcarbon.entity.User;
 import com.lowcarbon.service.UserService;
 import com.lowcarbon.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,9 +27,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
 
     @Operation(summary = "用户注册", description = "支持用户注册，密码采用BCrypt加密")
     @PostMapping("/register")
@@ -59,7 +59,7 @@ public class UserController {
     public Result<UserInfoVO> getUserInfo(HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             UserInfoVO userInfo = userService.getUserInfo(userId);
             return Result.success(userInfo);
         } catch (Exception e) {
@@ -72,9 +72,69 @@ public class UserController {
     public Result<Void> updateUserInfo(@RequestBody UserUpdateDTO updateDTO, HttpServletRequest request) {
         try {
             String token = getTokenFromRequest(request);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             userService.updateUserInfo(userId, updateDTO);
             return Result.success("更新成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "管理员-获取用户列表", description = "分页查询用户列表，支持按用户名、状态筛选")
+    @GetMapping("/admin/list")
+    public Result<IPage<User>> getUserList(@RequestParam(defaultValue = "1") Integer page,
+                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                           @RequestParam(required = false) String username,
+                                           @RequestParam(required = false) Integer status,
+                                           HttpServletRequest request) {
+        try {
+            String token = getTokenFromRequest(request);
+            Long userId = JwtUtil.getUserIdFromToken(token);
+            // 验证管理员权限
+            UserInfoVO currentUser = userService.getUserInfo(userId);
+            if (!Constants.ROLE_ADMIN.equals(currentUser.getRole())) {
+                return Result.error("无权限访问");
+            }
+            IPage<User> userPage = userService.getUserList(page, pageSize, username, status);
+            return Result.success(userPage);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "管理员-更新用户状态", description = "启用或禁用用户")
+    @PutMapping("/admin/{userId}/status")
+    public Result<Void> updateUserStatus(@PathVariable Long userId,
+                                         @RequestParam Integer status,
+                                         HttpServletRequest request) {
+        try {
+            String token = getTokenFromRequest(request);
+            Long currentUserId = JwtUtil.getUserIdFromToken(token);
+            // 验证管理员权限
+            UserInfoVO currentUser = userService.getUserInfo(currentUserId);
+            if (!Constants.ROLE_ADMIN.equals(currentUser.getRole())) {
+                return Result.error("无权限访问");
+            }
+            userService.updateUserStatus(userId, status);
+            return Result.success("更新成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "管理员-获取统计数据", description = "获取平台整体统计数据")
+    @GetMapping("/admin/statistics")
+    public Result<Map<String, Object>> getStatistics(HttpServletRequest request) {
+        try {
+            String token = getTokenFromRequest(request);
+            Long userId = JwtUtil.getUserIdFromToken(token);
+            // 验证管理员权限
+            UserInfoVO currentUser = userService.getUserInfo(userId);
+            if (!Constants.ROLE_ADMIN.equals(currentUser.getRole())) {
+                return Result.error("无权限访问");
+            }
+            Map<String, Object> statistics = userService.getStatistics();
+            return Result.success(statistics);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
@@ -88,4 +148,3 @@ public class UserController {
         throw new RuntimeException("未登录或Token无效");
     }
 }
-

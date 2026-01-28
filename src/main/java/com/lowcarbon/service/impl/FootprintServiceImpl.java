@@ -210,8 +210,9 @@ public class FootprintServiceImpl implements FootprintService {
     
     @Override
     @Transactional
-    public FootprintVO checkin(String behaviorType, Long userId, String remark) {
-        // 仅允许单位为“次”的行为进行一键打卡
+    public FootprintVO checkin(String behaviorType, Long userId, String remark, 
+                               BigDecimal latitude, BigDecimal longitude, String address, String geoSource) {
+        // 仅允许单位为"次"的行为进行一键打卡
         String unit = UNIT_BY_TYPE.get(behaviorType);
         if (unit == null) {
             throw new RuntimeException("行为类型非法");
@@ -239,6 +240,11 @@ public class FootprintServiceImpl implements FootprintService {
         dto.setDataValue(BigDecimal.ONE); // 一次
         dto.setRecordDate(today);
         dto.setRemark(remark);
+        // 设置位置信息（可选）
+        dto.setLatitude(latitude);
+        dto.setLongitude(longitude);
+        dto.setAddress(address);
+        dto.setGeoSource(geoSource);
         
         // 复用创建流程（含积分/减排计算与用户累计更新）
         return createFootprint(dto, userId);
@@ -340,6 +346,12 @@ public class FootprintServiceImpl implements FootprintService {
         existing.setDataValue(updateDTO.getDataValue());
         existing.setRecordDate(updateDTO.getRecordDate());
         existing.setRemark(updateDTO.getRemark());
+        // 位置字段更新
+        existing.setLatitude(updateDTO.getLatitude());
+        existing.setLongitude(updateDTO.getLongitude());
+        existing.setAddress(updateDTO.getAddress());
+        existing.setGeoSource(updateDTO.getGeoSource());
+        // 重新计算后的系数/减排/积分
         existing.setCoefficient(coefficient);
         existing.setReductionAmount(newReduction);
         existing.setPointsEarned(newPoints);
@@ -348,6 +360,11 @@ public class FootprintServiceImpl implements FootprintService {
         FootprintVO vo = new FootprintVO();
         BeanUtils.copyProperties(existing, vo);
         return vo;
+    }
+    
+    @Override
+    public List<Map<String, Object>> getMapPoints(Long userId, LocalDate startDate, LocalDate endDate) {
+        return footprintMapper.getMapPoints(userId, startDate, endDate);
     }
     
     @Override

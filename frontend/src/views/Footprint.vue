@@ -59,6 +59,55 @@
             />
           </el-form-item>
 
+          <!-- 位置字段（可选） -->
+          <div class="location-header">
+            <span class="location-title">位置(可选)</span>
+            <el-space wrap>
+              <el-button size="small" :loading="locating" @click="getCurrentLocation">
+                获取当前位置(GPS)
+              </el-button>
+              <el-tag v-if="form.geoSource" size="small" type="info" effect="plain">
+                来源：{{ form.geoSource }}
+              </el-tag>
+            </el-space>
+          </div>
+          <el-row :gutter="12">
+            <el-col :xs="24" :md="12">
+              <el-form-item label="纬度">
+                <el-input
+                  v-model.number="formLatitude"
+                  type="number"
+                  :step="0.000001"
+                  placeholder="例如 31.2304"
+                  style="width: 100%"
+                  :key="'lat-' + locationUpdateKey"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="12">
+              <el-form-item label="经度">
+                <el-input
+                  v-model.number="formLongitude"
+                  type="number"
+                  :step="0.000001"
+                  placeholder="例如 121.4737"
+                  style="width: 100%"
+                  :key="'lng-' + locationUpdateKey"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="地址">
+            <el-input v-model="form.address" placeholder="地址（可选），例如：上海市黄浦区" />
+          </el-form-item>
+          <el-form-item label="定位来源">
+            <el-select v-model="form.geoSource" placeholder="选择来源（可选）" clearable>
+              <el-option label="手动填写(manual)" value="manual" />
+              <el-option label="设备GPS(gps)" value="gps" />
+              <el-option label="反向地理编码(reverse_geocoding)" value="reverse_geocoding" />
+            </el-select>
+          </el-form-item>
+
           <el-form-item>
             <el-button type="primary" @click="submitForm">计算并保存</el-button>
             <el-button @click="resetForm">重置</el-button>
@@ -142,8 +191,17 @@
               <el-tag type="warning">{{ scope.row.pointsEarned }} 分</el-tag>
             </template>
           </el-table-column>
+          <el-table-column prop="address" label="地址" min-width="180" show-overflow-tooltip />
+          <el-table-column label="坐标" width="200">
+            <template #default="scope">
+              <span v-if="scope.row.latitude != null && scope.row.longitude != null">
+                {{ Number(scope.row.latitude) }}, {{ Number(scope.row.longitude) }}
+              </span>
+              <el-tag v-else type="info" effect="plain">无坐标</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-          <el-table-column label="操作" width="160" fixed="right">
+          <el-table-column label="操作" width="200" fixed="right">
             <template #default="scope">
               <el-button
                 type="primary"
@@ -176,7 +234,7 @@
         />
 
         <!-- 编辑记录对话框 -->
-        <el-dialog v-model="editDialogVisible" title="编辑记录" width="520px">
+        <el-dialog v-model="editDialogVisible" title="编辑记录" width="640px">
           <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="100px">
             <el-form-item label="行为类型" prop="behaviorType">
               <el-select v-model="editForm.behaviorType" placeholder="请选择行为类型" @change="onEditBehaviorTypeChange">
@@ -205,6 +263,55 @@
             </el-form-item>
             <el-form-item label="备注">
               <el-input v-model="editForm.remark" type="textarea" :rows="3" placeholder="请输入备注信息（可选）" />
+            </el-form-item>
+
+            <!-- 位置字段（可选） -->
+            <div class="location-header">
+              <span class="location-title">位置(可选)</span>
+              <el-space wrap>
+                <el-button size="small" :loading="locating" @click="getCurrentLocation(true)">
+                  获取当前位置(GPS)
+                </el-button>
+                <el-tag v-if="editForm.geoSource" size="small" type="info" effect="plain">
+                  来源：{{ editForm.geoSource }}
+                </el-tag>
+              </el-space>
+            </div>
+            <el-row :gutter="12">
+              <el-col :xs="24" :md="12">
+                <el-form-item label="纬度">
+                  <el-input
+                    v-model.number="editForm.latitude"
+                    type="number"
+                    :step="0.000001"
+                    placeholder="例如 31.2304"
+                    style="width: 100%"
+                    :key="'edit-lat-' + editLocationUpdateKey"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="经度">
+                  <el-input
+                    v-model.number="editForm.longitude"
+                    type="number"
+                    :step="0.000001"
+                    placeholder="例如 121.4737"
+                    style="width: 100%"
+                    :key="'edit-lng-' + editLocationUpdateKey"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-form-item label="地址">
+              <el-input v-model="editForm.address" placeholder="地址（可选），例如：上海市黄浦区" />
+            </el-form-item>
+            <el-form-item label="定位来源">
+              <el-select v-model="editForm.geoSource" placeholder="选择来源（可选）" clearable>
+                <el-option label="手动填写(manual)" value="manual" />
+                <el-option label="设备GPS(gps)" value="gps" />
+                <el-option label="反向地理编码(reverse_geocoding)" value="reverse_geocoding" />
+              </el-select>
             </el-form-item>
           </el-form>
           <template #footer>
@@ -251,16 +358,133 @@ const editForm = reactive({
   behaviorName: '',
   dataValue: null,
   recordDate: '',
-  remark: ''
+  remark: '',
+  // 位置字段（可选）
+  latitude: null,
+  longitude: null,
+  address: '',
+  geoSource: ''
 })
+
+// 位置自动获取状态
+const locating = ref(false)
+// 用于强制更新输入框组件的key
+const locationUpdateKey = ref(0)
+const editLocationUpdateKey = ref(0)
 
 const form = reactive({
   behaviorType: '',
   behaviorName: '',
   dataValue: null,
   recordDate: new Date().toISOString().split('T')[0],
-  remark: ''
+  remark: '',
+  // 位置字段（可选）
+  address: '',
+  geoSource: ''
 })
+
+// 经纬度使用独立的 ref 以确保响应式更新
+const formLatitude = ref(null)
+const formLongitude = ref(null)
+
+// 添加watch监听经纬度变化（调试用）
+watch(formLatitude, (newVal) => {
+  console.log('formLatitude changed:', newVal)
+})
+watch(formLongitude, (newVal) => {
+  console.log('formLongitude changed:', newVal)
+})
+
+/** AMap(高德)配置：如需反向地理编码，请在此填入你的 Web JS Key */
+const AMAP_KEY = '' // 例如：'your-amap-key'
+
+/** 加载 AMap JS SDK（若未配置 Key，则跳过反向地理编码） */
+function ensureAMap () {
+  return new Promise((resolve) => {
+    if (!AMAP_KEY) return resolve(false)
+    if (window.AMap) return resolve(true)
+    const script = document.createElement('script')
+    script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}`
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
+
+/** 使用 AMap 进行反向地理编码（可选） */
+async function reverseGeocodeAMap (lat, lng) {
+  const loaded = await ensureAMap()
+  if (!loaded || !window.AMap) return null
+  return new Promise((resolve) => {
+    window.AMap.plugin('AMap.Geocoder', function () {
+      const geocoder = new window.AMap.Geocoder()
+      geocoder.getAddress([lng, lat], function (status, result) {
+        if (status === 'complete' && result?.regeocode?.formattedAddress) {
+          resolve(result.regeocode.formattedAddress)
+        } else {
+          resolve(null)
+        }
+      })
+    })
+  })
+}
+
+/** 获取当前位置：HTML5 Geolocation + 可选反向地理编码(AMap) */
+async function getCurrentLocation (toEdit = false) {
+  if (!navigator.geolocation) {
+    ElMessage.error('当前浏览器不支持地理定位')
+    return
+  }
+  locating.value = true
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      const lat = pos.coords.latitude
+      const lng = pos.coords.longitude
+      console.log('获取到的GPS坐标:', { lat, lng, type: typeof lat })
+      
+      const address = await reverseGeocodeAMap(lat, lng)
+      console.log('反向地理编码结果:', address)
+      
+      if (toEdit) {
+        editForm.latitude = lat
+        editForm.longitude = lng
+        editForm.address = address || editForm.address || ''
+        editForm.geoSource = address ? 'reverse_geocoding' : 'gps'
+        editLocationUpdateKey.value++
+        console.log('已更新编辑表单:', { 
+          lat: editForm.latitude, 
+          lng: editForm.longitude,
+          key: editLocationUpdateKey.value
+        })
+      } else {
+        // 使用独立的 ref 变量
+        formLatitude.value = lat
+        formLongitude.value = lng
+        form.address = address || form.address || ''
+        form.geoSource = address ? 'reverse_geocoding' : 'gps'
+        locationUpdateKey.value++
+        console.log('已更新主表单:', { 
+          lat: formLatitude.value, 
+          lng: formLongitude.value,
+          key: locationUpdateKey.value
+        })
+      }
+      
+      await nextTick()
+      
+      ElMessage.success(`已获取当前位置: 纬度 ${lat.toFixed(6)}, 经度 ${lng.toFixed(6)}`)
+    } catch (e) {
+      console.error('位置获取或解析失败:', e)
+      ElMessage.error('位置获取或解析失败')
+    } finally {
+      locating.value = false
+    }
+  }, (err) => {
+    locating.value = false
+    console.error('地理定位失败:', err)
+    ElMessage.error(err?.message || '无法获取位置')
+  }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 })
+}
 
 /** 根据行为类型获取单位（km/度/吨/次） */
 const getUnitByType = (type) => {
@@ -536,6 +760,11 @@ const openEdit = (row) => {
   editForm.dataValue = Number(row.dataValue)
   editForm.recordDate = row.recordDate
   editForm.remark = row.remark || ''
+  // 位置字段
+  editForm.latitude = row.latitude != null ? Number(row.latitude) : null
+  editForm.longitude = row.longitude != null ? Number(row.longitude) : null
+  editForm.address = row.address || ''
+  editForm.geoSource = row.geoSource || ''
   editDialogVisible.value = true
 }
 
@@ -556,7 +785,12 @@ const submitEdit = async () => {
         behaviorName: editForm.behaviorName,
         dataValue: editForm.dataValue,
         recordDate: editForm.recordDate,
-        remark: editForm.remark
+        remark: editForm.remark,
+        // 位置字段
+        latitude: editForm.latitude,
+        longitude: editForm.longitude,
+        address: editForm.address,
+        geoSource: editForm.geoSource
       }
       const res = await updateFootprint(editForm.id, payload)
       if (res.code === 200) {
@@ -581,7 +815,13 @@ const submitForm = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const res = await createFootprint(form)
+        // 将独立的经纬度 ref 变量合并到提交的数据中
+        const submitData = {
+          ...form,
+          latitude: formLatitude.value,
+          longitude: formLongitude.value
+        }
+        const res = await createFootprint(submitData)
         if (res.code === 200) {
           const data = res.data
           calculationResult.value = {
@@ -593,6 +833,8 @@ const submitForm = async () => {
           // 重置表单并刷新统计数据
           resetForm()
           loadStatistics()
+          loadDailyStatistics()
+          loadBehaviorStatistics()
           
           // 3秒后清除计算结果提示
           setTimeout(() => {
@@ -612,6 +854,9 @@ const resetForm = () => {
     formRef.value.resetFields()
   }
   form.recordDate = new Date().toISOString().split('T')[0]
+  // 重置独立的经纬度 ref 变量
+  formLatitude.value = null
+  formLongitude.value = null
   calculationResult.value = null
 }
 
@@ -666,6 +911,18 @@ onMounted(() => {
   margin-left: 10px;
   color: #909399;
   font-size: 14px;
+}
+
+.location-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.location-title {
+  font-weight: 600;
+  color: #606266;
 }
 
 .statistics-section {

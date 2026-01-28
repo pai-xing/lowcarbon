@@ -78,4 +78,17 @@ public interface FootprintMapper extends BaseMapper<Footprint> {
      */
     @Select("SELECT COUNT(*) FROM tb_footprint WHERE user_id = #{userId} AND record_date = #{recordDate}")
     int existsAnyOnDate(Long userId, LocalDate recordDate);
+    
+    /**
+     * 地图足迹点位查询：返回带经纬度的记录（可按日期范围过滤）
+     */
+    @Select("SELECT id, user_id AS userId, behavior_type AS behaviorType, behavior_name AS behaviorName, " +
+            "latitude, longitude, address, record_date AS recordDate " +
+            "FROM tb_footprint " +
+            "WHERE user_id = #{userId} " +
+            "AND latitude IS NOT NULL AND longitude IS NOT NULL " +
+            "AND (#{startDate} IS NULL OR record_date >= #{startDate}) " +
+            "AND (#{endDate} IS NULL OR record_date <= #{endDate}) " +
+            "ORDER BY record_date")
+    List<Map<String, Object>> getMapPoints(Long userId, LocalDate startDate, LocalDate endDate);
 }

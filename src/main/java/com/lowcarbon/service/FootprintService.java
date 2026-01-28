@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.lowcarbon.dto.FootprintCreateDTO;
 import com.lowcarbon.dto.FootprintVO;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +42,17 @@ public interface FootprintService {
     FootprintVO updateFootprint(Long id, FootprintCreateDTO updateDTO, Long userId);
     
     /**
-     * 标准打卡（单位为“次”的行为，dataValue=1，recordDate=当天，含幂等校验与积分计算）
+     * 标准打卡（单位为"次"的行为，dataValue=1，recordDate=当天，含幂等校验与积分计算）
+     * @param behaviorType 行为类型
+     * @param userId 用户ID
+     * @param remark 备注
+     * @param latitude 纬度（可选）
+     * @param longitude 经度（可选）
+     * @param address 地址（可选）
+     * @param geoSource 位置来源（可选，如：GPS、手动输入等）
      */
-    FootprintVO checkin(String behaviorType, Long userId, String remark);
+    FootprintVO checkin(String behaviorType, Long userId, String remark, 
+                       BigDecimal latitude, BigDecimal longitude, String address, String geoSource);
     
     /**
      * 获取指定月份的打卡日历（日期维度聚合：是否打卡、次数、行为类型列表）
@@ -55,8 +64,13 @@ public interface FootprintService {
      */
     Map<String, Object> getCheckinStats(Long userId);
     
-    /**
-     * 删除碳足迹记录
-     */
-    void deleteFootprint(Long id, Long userId);
-}
+     /**
+      * 删除碳足迹记录
+      */
+     void deleteFootprint(Long id, Long userId);
+     
+     /**
+      * 地图足迹：查询用户在指定日期范围内的经纬度点位列表
+      */
+     List<Map<String, Object>> getMapPoints(Long userId, LocalDate startDate, LocalDate endDate);
+ }

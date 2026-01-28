@@ -14,9 +14,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class AuthInterceptor implements HandlerInterceptor {
 
     @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
     private UserMapper userMapper;
 
     @Override
@@ -45,7 +42,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         try {
             token = token.substring(7);
-            Long userId = jwtUtil.getUserIdFromToken(token);
+            Long userId = JwtUtil.getUserIdFromToken(token);
             User user = userMapper.selectById(userId);
             if (user == null || !Constants.STATUS_NORMAL.equals(user.getStatus())) {
                 response.setStatus(401);

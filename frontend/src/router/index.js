@@ -35,9 +35,27 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'admin',
+        name: 'AdminManage',
+        component: () => import('../views/AdminManage.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'admin/users',
+        name: 'UserManage',
+        component: () => import('../views/UserManage.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
         path: 'admin/articles',
         name: 'ArticleManage',
         component: () => import('../views/ArticleManage.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'admin/dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/Dashboard.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
@@ -56,6 +74,39 @@ const routes = [
         name: 'Checkin',
         component: () => import('../views/Checkin.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'map-footprint',
+        name: 'MapFootprint',
+        component: () => import('../views/MapFootprint.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'community',
+        name: 'Community',
+        component: () => import('../views/Community.vue')
+      },
+      {
+        path: 'publish-post',
+        name: 'PublishPost',
+        component: () => import('../views/PublishPost.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'shop',
+        name: 'Shop',
+        component: () => import('../views/Shop.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'activity',
+        name: 'ActivityList',
+        component: () => import('../views/ActivityList.vue')
+      },
+      {
+        path: 'activity/:id',
+        name: 'ActivityDetail',
+        component: () => import('../views/ActivityDetail.vue')
       }
     ]
   },

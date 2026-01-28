@@ -1,11 +1,14 @@
 package com.lowcarbon.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lowcarbon.dto.UserInfoVO;
 import com.lowcarbon.dto.UserLoginDTO;
 import com.lowcarbon.dto.UserRegisterDTO;
 import com.lowcarbon.dto.UserUpdateDTO;
 import com.lowcarbon.entity.User;
+
+import java.util.Map;
 
 public interface UserService extends IService<User> {
     /**
@@ -32,5 +35,19 @@ public interface UserService extends IService<User> {
      * 根据用户名查询用户
      */
     User getByUsername(String username);
-}
 
+    /**
+     * 管理员-分页查询用户列表
+     */
+    IPage<User> getUserList(Integer page, Integer pageSize, String username, Integer status);
+
+    /**
+     * 管理员-更新用户状态
+     */
+    void updateUserStatus(Long userId, Integer status);
+
+    /**
+     * 管理员-获取统计数据
+     */
+    Map<String, Object> getStatistics();
+}

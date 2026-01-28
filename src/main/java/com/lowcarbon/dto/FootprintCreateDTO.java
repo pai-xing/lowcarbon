@@ -24,4 +24,10 @@ public class FootprintCreateDTO {
     private LocalDate recordDate;
     
     private String remark;
+    
+    // 地图足迹：可选位置信息
+    private BigDecimal latitude;   // 纬度
+    private BigDecimal longitude;  // 经度
+    private String address;        // 地址（可选）
+    private String geoSource;      // 定位来源：manual/gps/reverse_geocoding
 }

@@ -73,3 +73,13 @@ export const deleteFootprint = (id) => {
 export const updateFootprint = (id, data) => {
   return request.put(`/footprint/${id}`, data)
 }
+
+/**
+ * 获取地图足迹点位（按日期范围过滤，可为空默认后端处理）
+ * @param {Object} params
+ * @param {string} [params.startDate] - YYYY-MM-DD
+ * @param {string} [params.endDate] - YYYY-MM-DD
+ */
+export const getMapPoints = (params) => {
+  return request.get('/footprint/map/points', { params })
+}
