@@ -107,6 +107,29 @@ const routes = [
         path: 'activity/:id',
         name: 'ActivityDetail',
         component: () => import('../views/ActivityDetail.vue')
+      },
+      {
+        path: 'leaderboard',
+        name: 'Leaderboard',
+        component: () => import('../views/Leaderboard.vue')
+      },
+      {
+        path: 'admin/activities',
+        name: 'ActivityManage',
+        component: () => import('../views/ActivityManage.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'admin/posts',
+        name: 'PostManage',
+        component: () => import('../views/PostManage.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'admin/map',
+        name: 'MapManage',
+        component: () => import('../views/MapManage.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
   },

@@ -1,32 +1,5 @@
 <template>
   <div class="home-container">
-    <el-card class="search-card">
-      <el-form :inline="true" :model="queryForm">
-        <el-form-item label="关键词">
-          <el-input
-            v-model="queryForm.keyword"
-            placeholder="搜索文章标题或内容"
-            clearable
-            style="width: 300px"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="queryForm.category" placeholder="全部" clearable style="width: 150px">
-            <el-option label="全部" value="" />
-            <el-option label="环保知识" value="环保知识" />
-            <el-option label="低碳生活" value="低碳生活" />
-            <el-option label="节能减排" value="节能减排" />
-            <el-option label="绿色出行" value="绿色出行" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
     <div class="article-list" v-loading="loading">
       <el-card
         v-for="article in articleList"

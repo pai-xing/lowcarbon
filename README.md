@@ -165,6 +165,12 @@
 - 创建记录
   - 后端：`POST /footprint`
   - 前端：`Footprint.vue` 表单提交；计算减排与积分，写入 `tb_footprint` 并更新用户累计
+- **位置信息自动获取**（已修复）
+  - 支持HTML5 Geolocation API获取用户GPS坐标
+  - 可选配置高德地图Key实现反向地理编码（自动填充地址）
+  - 位置来源标识：manual(手动)、gps(设备GPS)、reverse_geocoding(反向地理编码)
+  - 数据流修复：经纬度以字符串形式存储和显示，提交时转换为数值类型
+  - 支持在创建记录和编辑记录时获取位置
 - 列表与删除
   - 后端：`GET /footprint/list`(分页/日期范围)、`DELETE /footprint/{id}`
   - 前端：历史记录页支持筛选、分页、删除联动统计刷新
@@ -339,11 +345,15 @@
   - 确认最近30天有记录或创建一条测试记录
   - 确认容器使用 `v-show` 保持在 DOM 中，数据到达后初始化与 `resize`
 - 打卡提示：
-  - 同用户/同行为/同日仅一次；重复提示“今日已完成该行为打卡”
+  - 同用户/同行为/同日仅一次；重复提示"今日已完成该行为打卡"
   - 月份选择器格式 `YYYY-MM`，月历展示每日次数与行为类型
 - 编译报红：
   - 执行 `mvn clean compile`
   - 检查数据库结构与应用配置
+- 位置自动填充问题：
+  - 确保浏览器已授权定位权限
+  - 点击"获取当前位置(GPS)"按钮后，经纬度应自动填充到输入框
+  - 若地址未自动填充，可配置高德地图Key启用反向地理编码功能
 - 更多前端常见问题：
   - 参见 `frontend/TROUBLESHOOTING.md`
 - 修复记录：
@@ -363,9 +373,16 @@
   - 使用 `createRouter(createWebHistory)` 与 `useUserStore` 进行登录态路由守卫；`MapFootprint`、`Checkin` 等页面均设置 `meta: { requiresAuth: true }`，请在游客态下避免访问受限路由。
 - 地图足迹页面与地理数据
   - `frontend/src/views/MapFootprint.vue` 已存在基础布局与样式（`.map-footprint` 容器等）；若需地图图层与热力图，请结合 `database_update_geo.sql` 提供的地理位数据进行后续扩展。
+- 碳足迹位置自动填充功能
+  - 已修复：`frontend/src/views/Footprint.vue` 中GPS位置获取后自动填充经纬度到输入框
+  - 实现方式：经纬度字段使用字符串类型存储（`latitude: ''`, `longitude: ''`），输入框使用 `v-model`（不带.number修饰符），type为"text"
+  - 提交时转换：在提交前通过 `parseFloat()` 将字符串转换为数值类型
+  - 强制更新机制：使用 `locationUpdateKey` 和 `editLocationUpdateKey` 配合 `:key` 属性强制Vue重新渲染输入框组件
+  - 支持场景：创建新记录和编辑现有记录时均可使用"获取当前位置(GPS)"功能
 - 建议的本地一致性校验步骤
   - 后端：`mvn clean compile -DskipTests`（确认编译通过）→ 运行 `LowCarbonApplication` → 访问 `http://localhost:8080/doc.html`。
   - 前端：`cd frontend && npm install && npm run dev` → 登录后访问 `/map-footprint`、`/checkin` → 验证导航高亮与路由跳转。
+  - 位置功能测试：访问 `/footprint` → 点击"获取当前位置(GPS)"按钮 → 授权浏览器定位 → 验证经纬度自动填充到输入框。
 - 文档交叉引用
   - 变更与修复摘要：`BUGFIX_SUMMARY.md`
   - 前端说明与问题排查：`frontend/README.md`、`frontend/QUICKSTART.md`、`frontend/TROUBLESHOOTING.md`

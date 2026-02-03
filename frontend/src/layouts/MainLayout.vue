@@ -27,7 +27,7 @@
         </div>
         <div class="logo" @click="$router.push('/')">
           <el-icon><Sunny /></el-icon>
-          <span>低碳生活系统</span>
+
         </div>
         <div class="nav-menu">
           <el-menu
@@ -36,17 +36,21 @@
             router
             class="nav-menu-item"
           >
-            <el-menu-item index="/">首页</el-menu-item>
-            <el-menu-item index="/category/huanbao">环保知识</el-menu-item>
-            <el-menu-item index="/category/ditan">低碳生活</el-menu-item>
-            <el-menu-item index="/category/jieneng">节能减排</el-menu-item>
-            <el-menu-item index="/category/lvxing">绿色出行</el-menu-item>
+            <el-sub-menu index="home-menu">
+              <template #title>首页</template>
+              <el-menu-item index="/">全部内容</el-menu-item>
+              <el-menu-item index="/category/huanbao">环保知识</el-menu-item>
+              <el-menu-item index="/category/ditan">低碳生活</el-menu-item>
+              <el-menu-item index="/category/jieneng">节能减排</el-menu-item>
+              <el-menu-item index="/category/lvxing">绿色出行</el-menu-item>
+            </el-sub-menu>
             <el-menu-item index="/community">社区</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/footprint">碳足迹</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/checkin">打卡</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/map-footprint">地图足迹</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/shop">积分商城</el-menu-item>
             <el-menu-item index="/activity">低碳活动</el-menu-item>
+            <el-menu-item index="/leaderboard">排行榜</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/publish">
               <el-icon><EditPen /></el-icon>
               <span>发布科普</span>

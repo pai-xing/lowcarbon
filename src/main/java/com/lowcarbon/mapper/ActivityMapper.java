@@ -30,7 +30,7 @@ public interface ActivityMapper extends BaseMapper<Activity> {
             "FROM tb_user u " +
             "INNER JOIN tb_activity_join aj ON u.id = aj.user_id " +
             "LEFT JOIN tb_footprint f ON u.id = f.user_id " +
-            "AND f.record_time BETWEEN #{startTime} AND #{endTime} " +
+            "AND f.create_time BETWEEN #{startTime} AND #{endTime} " +
             "WHERE aj.activity_id = #{activityId} " +
             "GROUP BY u.id, u.username, u.nickname, u.avatar " +
             "ORDER BY totalReduction DESC " +
@@ -53,7 +53,7 @@ public interface ActivityMapper extends BaseMapper<Activity> {
             "FROM tb_user u " +
             "INNER JOIN tb_activity_join aj ON u.id = aj.user_id " +
             "LEFT JOIN tb_footprint f ON u.id = f.user_id " +
-            "AND f.record_time BETWEEN #{startTime} AND #{endTime} " +
+            "AND f.create_time BETWEEN #{startTime} AND #{endTime} " +
             "WHERE aj.activity_id = #{activityId} AND u.id = #{userId} " +
             "GROUP BY u.id, u.username, u.nickname, u.avatar")
     RankingVO getUserRanking(@Param("activityId") Long activityId,

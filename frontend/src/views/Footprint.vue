@@ -75,8 +75,8 @@
             <el-col :xs="24" :md="12">
               <el-form-item label="纬度">
                 <el-input
-                  v-model.number="formLatitude"
-                  type="number"
+                  v-model="form.latitude"
+                  type="text"
                   :step="0.000001"
                   placeholder="例如 31.2304"
                   style="width: 100%"
@@ -87,8 +87,8 @@
             <el-col :xs="24" :md="12">
               <el-form-item label="经度">
                 <el-input
-                  v-model.number="formLongitude"
-                  type="number"
+                  v-model="form.longitude"
+                  type="text"
                   :step="0.000001"
                   placeholder="例如 121.4737"
                   style="width: 100%"
@@ -281,8 +281,8 @@
               <el-col :xs="24" :md="12">
                 <el-form-item label="纬度">
                   <el-input
-                    v-model.number="editForm.latitude"
-                    type="number"
+                    v-model="editForm.latitude"
+                    type="text"
                     :step="0.000001"
                     placeholder="例如 31.2304"
                     style="width: 100%"
@@ -293,8 +293,8 @@
               <el-col :xs="24" :md="12">
                 <el-form-item label="经度">
                   <el-input
-                    v-model.number="editForm.longitude"
-                    type="number"
+                    v-model="editForm.longitude"
+                    type="text"
                     :step="0.000001"
                     placeholder="例如 121.4737"
                     style="width: 100%"
@@ -360,8 +360,8 @@ const editForm = reactive({
   recordDate: '',
   remark: '',
   // 位置字段（可选）
-  latitude: null,
-  longitude: null,
+  latitude: '',
+  longitude: '',
   address: '',
   geoSource: ''
 })
@@ -379,20 +379,10 @@ const form = reactive({
   recordDate: new Date().toISOString().split('T')[0],
   remark: '',
   // 位置字段（可选）
+  latitude: '',
+  longitude: '',
   address: '',
   geoSource: ''
-})
-
-// 经纬度使用独立的 ref 以确保响应式更新
-const formLatitude = ref(null)
-const formLongitude = ref(null)
-
-// 添加watch监听经纬度变化（调试用）
-watch(formLatitude, (newVal) => {
-  console.log('formLatitude changed:', newVal)
-})
-watch(formLongitude, (newVal) => {
-  console.log('formLongitude changed:', newVal)
 })
 
 /** AMap(高德)配置：如需反向地理编码，请在此填入你的 Web JS Key */
@@ -446,8 +436,8 @@ async function getCurrentLocation (toEdit = false) {
       console.log('反向地理编码结果:', address)
       
       if (toEdit) {
-        editForm.latitude = lat
-        editForm.longitude = lng
+        editForm.latitude = lat.toFixed(6)
+        editForm.longitude = lng.toFixed(6)
         editForm.address = address || editForm.address || ''
         editForm.geoSource = address ? 'reverse_geocoding' : 'gps'
         editLocationUpdateKey.value++
@@ -457,15 +447,15 @@ async function getCurrentLocation (toEdit = false) {
           key: editLocationUpdateKey.value
         })
       } else {
-        // 使用独立的 ref 变量
-        formLatitude.value = lat
-        formLongitude.value = lng
+        // 直接设置到 form 对象中（保持数字类型，与 v-model.number 一致）
+        form.latitude = lat.toFixed(6)
+        form.longitude = lng.toFixed(6)
         form.address = address || form.address || ''
         form.geoSource = address ? 'reverse_geocoding' : 'gps'
         locationUpdateKey.value++
-        console.log('已更新主表单:', { 
-          lat: formLatitude.value, 
-          lng: formLongitude.value,
+        console.log('已更新新建表单:', { 
+          lat: form.latitude, 
+          lng: form.longitude,
           key: locationUpdateKey.value
         })
       }
@@ -761,8 +751,8 @@ const openEdit = (row) => {
   editForm.recordDate = row.recordDate
   editForm.remark = row.remark || ''
   // 位置字段
-  editForm.latitude = row.latitude != null ? Number(row.latitude) : null
-  editForm.longitude = row.longitude != null ? Number(row.longitude) : null
+  editForm.latitude = row.latitude != null ? String(Number(row.latitude).toFixed(6)) : ''
+  editForm.longitude = row.longitude != null ? String(Number(row.longitude).toFixed(6)) : ''
   editForm.address = row.address || ''
   editForm.geoSource = row.geoSource || ''
   editDialogVisible.value = true
@@ -780,6 +770,7 @@ const submitEdit = async () => {
   await editFormRef.value.validate(async (valid) => {
     if (!valid) return
     try {
+      // 提交前将经纬度从字符串转换为数值
       const payload = {
         behaviorType: editForm.behaviorType,
         behaviorName: editForm.behaviorName,
@@ -787,8 +778,8 @@ const submitEdit = async () => {
         recordDate: editForm.recordDate,
         remark: editForm.remark,
         // 位置字段
-        latitude: editForm.latitude,
-        longitude: editForm.longitude,
+        latitude: editForm.latitude !== '' && editForm.latitude !== null ? parseFloat(editForm.latitude) : null,
+        longitude: editForm.longitude !== '' && editForm.longitude !== null ? parseFloat(editForm.longitude) : null,
         address: editForm.address,
         geoSource: editForm.geoSource
       }
@@ -815,13 +806,15 @@ const submitForm = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 将独立的经纬度 ref 变量合并到提交的数据中
-        const submitData = {
-          ...form,
-          latitude: formLatitude.value,
-          longitude: formLongitude.value
+        // form 对象已包含经纬度，直接提交
+        const payload = { ...form }
+        if (payload.latitude !== null && payload.latitude !== '') {
+          payload.latitude = parseFloat(payload.latitude)
         }
-        const res = await createFootprint(submitData)
+        if (payload.longitude !== null && payload.longitude !== '') {
+          payload.longitude = parseFloat(payload.longitude)
+        }
+        const res = await createFootprint(payload)
         if (res.code === 200) {
           const data = res.data
           calculationResult.value = {
@@ -854,9 +847,11 @@ const resetForm = () => {
     formRef.value.resetFields()
   }
   form.recordDate = new Date().toISOString().split('T')[0]
-  // 重置独立的经纬度 ref 变量
-  formLatitude.value = null
-  formLongitude.value = null
+  // 重置位置相关字段
+  form.latitude = ''
+  form.longitude = ''
+  form.address = ''
+  form.geoSource = ''
   calculationResult.value = null
 }
 

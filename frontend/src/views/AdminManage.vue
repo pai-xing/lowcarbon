@@ -30,7 +30,9 @@ import {
   User, 
   Document, 
   ChatDotRound, 
-  DataAnalysis 
+  DataAnalysis,
+  Calendar,
+  LocationInformation
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -63,6 +65,20 @@ const menuItems = [
     description: '查看平台关键数据和可视化图表',
     icon: DataAnalysis,
     color: '#F56C6C'
+  },
+  {
+    path: '/admin/activities',
+    title: '活动管理',
+    description: '创建和管理线上低碳挑战活动',
+    icon: Calendar,
+    color: '#9C27B0'
+  },
+  {
+    path: '/admin/map',
+    title: '地图管理',
+    description: '查看用户足迹分布，维护预设打卡地点',
+    icon: LocationInformation,
+    color: '#00BCD4'
   }
 ]
 
