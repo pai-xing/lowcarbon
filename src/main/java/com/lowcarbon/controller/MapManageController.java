@@ -34,8 +34,7 @@ public class MapManageController {
     public Result<List<Map<String, Object>>> getAllUsersFootprints(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
-        // 如果没有指定日期，默认查询最近7天
+
         if (startDate == null && endDate == null) {
             endDate = LocalDate.now();
             startDate = endDate.minusDays(6);

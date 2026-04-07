@@ -21,6 +21,9 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/user/login",
                         "/article/list",
                         "/footprint/behavior-types",
+                        "/posts",  // 社区帖子列表
+                        "/posts/*",  // 社区帖子详情
+                        "/posts/*/comments",  // 帖子评论列表
                         "/doc.html",
                         "/webjars/**",
                         "/swagger-resources/**",

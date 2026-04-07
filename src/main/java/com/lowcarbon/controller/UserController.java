@@ -110,7 +110,6 @@ public class UserController {
         try {
             String token = getTokenFromRequest(request);
             Long currentUserId = JwtUtil.getUserIdFromToken(token);
-            // 验证管理员权限
             UserInfoVO currentUser = userService.getUserInfo(currentUserId);
             if (!Constants.ROLE_ADMIN.equals(currentUser.getRole())) {
                 return Result.error("无权限访问");

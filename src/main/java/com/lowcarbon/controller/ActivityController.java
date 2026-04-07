@@ -27,7 +27,7 @@ public class ActivityController {
     @Operation(summary = "创建活动(管理员)")
     @PostMapping("/create")
     public Result<Void> createActivity(@RequestBody Activity activity, @RequestHeader("Authorization") String token) {
-        // 简化实现：暂不验证管理员权限
+
         activityService.createActivity(activity);
         return Result.success();
     }
